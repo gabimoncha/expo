@@ -2,10 +2,8 @@ require_relative 'constants'
 require_relative 'package'
 
 # Require extensions to CocoaPods' classes
-require_relative 'cocoapods/pod_target'
 require_relative 'cocoapods/sandbox'
 require_relative 'cocoapods/target_definition'
-require_relative 'cocoapods/umbrella_header_generator'
 require_relative 'cocoapods/user_project_integrator'
 
 module Expo
@@ -22,7 +20,7 @@ module Expo
       resolve_result = resolve()
 
       @packages = resolve_result['modules'].map { |json_package| Package.new(json_package) }
-      @extraPods = resolve_result['extraDependencies']['iosPods']
+      @extraPods = resolve_result['extraDependencies']
     end
 
     public def use_expo_modules!
@@ -62,9 +60,11 @@ module Expo
 
             podspec_dir_path = Pathname.new(pod.podspec_dir).relative_path_from(project_directory).to_path
 
+            debug_configurations = @target_definition.build_configurations ? @target_definition.build_configurations.select { |config| config.include?('Debug') }.keys : ['Debug']
+
             pod_options = {
               :path => podspec_dir_path,
-              :configuration => package.debugOnly ? ['Debug'] : [] # An empty array means all configurations
+              :configuration => package.debugOnly ? debug_configurations : [] # An empty array means all configurations
             }.merge(global_flags, package.flags)
 
             if tests_only || include_tests

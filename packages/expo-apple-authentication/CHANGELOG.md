@@ -4,11 +4,31 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
+- Add missing `react-native` peer dependency. ([#30573](https://github.com/expo/expo/pull/30573) by [@byCedric](https://github.com/byCedric))
+
 ### 💡 Others
+
+- Removed redundant usage of `EventEmitter` instance. ([#28946](https://github.com/expo/expo/pull/28946) by [@tsapeta](https://github.com/tsapeta))
+
+## 6.4.2 - 2024-07-22
+
+### 💡 Others
+
+- Handle new error code on `iOS` 18. ([#29639](https://github.com/expo/expo/pull/29639) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 6.4.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 6.4.0 — 2024-04-18
+
+_This version does not introduce any user-facing changes._
 
 ## 6.3.0 — 2023-11-14
 

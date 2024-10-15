@@ -17,9 +17,13 @@ public class AssetModule: Module {
   public func definition() -> ModuleDefinition {
     Name("ExpoAsset")
 
+    // NOTE: this is exposed in JS as globalThis.expo.modules.ExpoAsset.downloadAsync
+    // and potentially consumed outside of Expo (e.g. RN vector icons)
+    // do NOT change the function signature as it'll break consumers!
     AsyncFunction("downloadAsync") { (url: URL, md5Hash: String?, type: String, promise: Promise) in
       if url.isFileURL {
         promise.resolve(url.standardizedFileURL.absoluteString)
+        return
       }
       guard let cacheFileId = md5Hash ?? getMD5Hash(fromURL: url),
       let cachesDirectory = appContext?.fileSystem?.cachesDirectory,
@@ -61,12 +65,11 @@ public class AssetModule: Module {
       promise.reject(UnableToSaveAssetToDirectoryException(url))
       return
     }
-    do {
-      try fileSystem.ensureDirExists(withPath: localUrl.path)
-    } catch {
+    if !fileSystem.ensureDirExists(withPath: localUrl.path) {
       promise.reject(UnableToSaveAssetToDirectoryException(localUrl))
       return
     }
+
     guard fileSystem.permissions(forURI: localUrl).contains(EXFileSystemPermissionFlags.write) else {
       promise.reject(UnableToSaveAssetToDirectoryException(localUrl))
       return

@@ -11,9 +11,9 @@ Pod::Spec.new do |s|
   s.author         = package['author']
   s.homepage       = package['homepage']
   s.platforms       = {
-    :ios => '13.4',
+    :ios => '15.1',
     :osx => '10.15',
-    :tvos => '13.4'
+    :tvos => '15.1'
   }
   s.swift_version  = '5.4'
   s.source         = { :git => 'https://github.com/expo/expo.git' }
@@ -25,6 +25,8 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES'
   }
+
+  s.resource_bundles = {'ExpoFileSystem_privacy' => ['PrivacyInfo.xcprivacy']}
 
   s.source_files = "**/*.{h,m,swift}"
 

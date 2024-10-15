@@ -100,19 +100,9 @@ describe(getUrlWithReactNavigationConcessions, () => {
       );
     });
   });
-
-  [
-    ['', ''],
-    ['https://acme.com/hello/world/?foo=bar#123', 'https://acme.com/hello/world/?foo=bar'],
-    ['/foobar#123', '/foobar'],
-  ].forEach(([url, expected]) => {
-    it(`returns the pathname without hash for ${url}`, () => {
-      expect(getUrlWithReactNavigationConcessions(url).inputPathnameWithoutHash).toBe(expected);
-    });
-  });
 });
 
-it(`strips hashes`, () => {
+it(`parses hashes`, () => {
   expect(
     getStateFromPath('/hello#123', {
       screens: {
@@ -124,6 +114,9 @@ it(`strips hashes`, () => {
       {
         name: 'hello',
         path: '/hello',
+        params: {
+          '#': '123',
+        },
       },
     ],
   });
@@ -134,6 +127,7 @@ it(`strips hashes`, () => {
         name: '[hello]',
         params: {
           hello: 'hello',
+          '#': '123',
         },
         path: '/hello',
       },
@@ -174,7 +168,13 @@ it(`supports spaces`, () => {
   // TODO: Test rest params
 });
 
-it(`matches unmatched existing groups against 404`, () => {
+it(`matches against dynamic groups`, () => {
+  /*
+   * This will match (app)/([user])/[user]/index with a user = '(explore)'
+   * It may appear that '(explore)' is a group name but there is not value to match '[user]'
+   * So it doesn't match any routes in the '(explore)' group
+   * Therefore, '(explore)' is used as the value for '[user]'
+   */
   expect(
     getStateFromPath(
       '/(app)/(explore)',
@@ -263,6 +263,55 @@ it(`adds dynamic route params from all levels of the path`, () => {
             },
           ],
         },
+      },
+    ],
+  });
+});
+
+it(`handles query params`, () => {
+  expect(
+    getStateFromPath('/?test=true&hello=world&array=1&array=2', getMockConfig(['index.tsx']))
+  ).toEqual({
+    routes: [
+      {
+        name: 'index',
+        params: {
+          test: 'true',
+          hello: 'world',
+          array: ['1', '2'],
+        },
+        path: '/?test=true&hello=world&array=1&array=2',
+      },
+    ],
+  });
+});
+
+it(`handles query params`, () => {
+  expect(
+    getStateFromPath('/?test=true&hello=world&array=1&array=2', getMockConfig(['index.tsx']))
+  ).toEqual({
+    routes: [
+      {
+        name: 'index',
+        params: {
+          test: 'true',
+          hello: 'world',
+          array: ['1', '2'],
+        },
+        path: '/?test=true&hello=world&array=1&array=2',
+      },
+    ],
+  });
+});
+
+it(`prioritizes hoisted index routes over dynamic groups`, () => {
+  expect(
+    getStateFromPath('/(one)', getMockConfig(['(one,two)/index.tsx', '(one,two)/[slug].tsx']))
+  ).toEqual({
+    routes: [
+      {
+        name: '(one)/index',
+        path: '',
       },
     ],
   });

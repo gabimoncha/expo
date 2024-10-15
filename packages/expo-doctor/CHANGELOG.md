@@ -6,9 +6,94 @@
 
 ### 🎉 New features
 
+- Show more info on network errors, allow overriding of network errors ([#31926](https://github.com/expo/expo/pull/31926) by [@keith-kurak](https://github.com/keith-kurak))
+
+- Add support for `.easignore` files when performing project validations. ([#31334](https://github.com/expo/expo/pull/31334) by [@betomoedano](https://github.com/betomoedano))
+
 ### 🐛 Bug fixes
 
+- fix conditional on iOS non-CNG check ([#31920](https://github.com/expo/expo/pull/31920) by [@keith-kurak](https://github.com/keith-kurak))
+
 ### 💡 Others
+
+## 1.10.1 — 2024-08-28
+
+### 🐛 Bug fixes
+
+- Fix error when `expo-build-properties` is present but `android` key is not. ([#31228](https://github.com/expo/expo/pull/31228) by [@keith-kurak](https://github.com/keith-kurak))
+
+## 1.10.0 — 2024-08-27
+
+### 🎉 New features
+
+- Warn if project is incompatible with upcoming Play Store Android API level requirements. ([#31067](https://github.com/expo/expo/pull/31067) by [@keith-kurak](https://github.com/keith-kurak))
+
+## 1.9.1 — 2024-08-16
+
+### 💡 Others
+
+- Add check for native folders and configuration fields in app.json. This warns that EAS Build will not sync the fields if the native folders are present. ([#30817](https://github.com/expo/expo/pull/30817) by [@betomoedano](https://github.com/betomoedano))
+
+## 1.9.0 — 2024-07-26
+
+### 🐛 Bug fixes
+
+- Drop `node-fetch` in favor of Node built-in `fetch` to support Node 22. ([#30551](https://github.com/expo/expo/pull/30551) by [@byCedric](https://github.com/byCedric))
+- Add missing dependencies `fast-glob`, `getenv`, and `terminal-link`. ([#30551](https://github.com/expo/expo/pull/30551) by [@byCedric](https://github.com/byCedric))
+
+### 💡 Others
+
+- Rename `directoryCheck` to `reactNativeDirectoryCheck`. ([#30647](https://github.com/expo/expo/pull/30647) by [@brentvatne](https://github.com/brentvatne))
+
+## 1.8.2 — 2024-07-19
+
+### 💡 Others
+
+- Make directory checks more configurable in package.json and improve check message. ([#30538](https://github.com/expo/expo/pull/30538) by [@brentvatne](https://github.com/brentvatne))
+
+## 1.8.1 — 2024-07-19
+
+### 🐛 Bug fixes
+
+- Change default ignore to string for react-native rather than regex. ([#30532](https://github.com/expo/expo/pull/30532) by [@brentvatne](https://github.com/brentvatne))
+
+## 1.8.0 — 2024-07-19
+
+### 🎉 New features
+
+- List unvalidated packages in directory check. Add `expo.doctor.directoryCheck.exclude` to **package.json** config to skip validating packages entirely. ([#30517](https://github.com/expo/expo/pull/30517) by [@brentvatne](https://github.com/brentvatne))
+
+## 1.7.0 — 2024-07-18
+
+### 🎉 New features
+
+- Add experimental check to validate packages against known issues in React Native Directory. Enable it with `EXPO_DOCTOR_ENABLE_DIRECTORY_CHECK=1`. ([#30496](https://github.com/expo/expo/pull/30496) by [@brentvatne](https://github.com/brentvatne))
+
+## 1.6.1 — 2024-05-16
+
+_This version does not introduce any user-facing changes._
+
+## 1.6.0 — 2024-05-01
+
+### 🎉 New features
+
+- Check if local modules native code is unintentionally gitignored ([#28484](https://github.com/expo/expo/pull/28484) by [@keith-kurak](https://github.com/keith-kurak))
+
+### 🐛 Bug fixes
+
+- Fix failed deep dependency checks when using npm@~10.6+ ([#28563](https://github.com/expo/expo/pull/28563) by [@keith-kurak](https://github.com/keith-kurak))
+
+## 1.5.2 — 2024-04-24
+
+### 🐛 Bug fixes
+
+- Fix error when fetching schema for unpublished SDK versions ([#28204](https://github.com/expo/expo/pull/28204) by [@leonhh](https://github.com/leonhh))
+
+## 1.5.1 — 2024-04-18
+
+### 🐛 Bug fixes
+
+- Skip Cocoapods version check when not on macOS ([#27751](https://github.com/expo/expo/pull/27751) by [@keith-kurak](https://github.com/keith-kurak))
 
 ## 1.5.0 — 2024-03-06
 

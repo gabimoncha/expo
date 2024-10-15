@@ -243,7 +243,7 @@ abstract class ReactNativeActivity :
       return reactRootViewRNClass as Class<out ViewGroup>
     }
     var sdkVersion = manifest.getExpoGoSDKVersion()
-    if (Constants.TEMPORARY_SDK_VERSION == sdkVersion) {
+    if (Constants.SDK_VERSION == sdkVersion) {
       sdkVersion = RNObject.UNVERSIONED
     }
     return RNObject("com.facebook.react.ReactRootView").loadVersion(sdkVersion!!).rnClass() as Class<out ViewGroup>
@@ -253,9 +253,11 @@ abstract class ReactNativeActivity :
   override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
     devSupportManager?.let { devSupportManager ->
       if (!isCrashed && devSupportManager.call("getDevSupportEnabled") as Boolean) {
-        val didDoubleTapR = Assertions.assertNotNull(doubleTapReloadRecognizer)
-          .didDoubleTapR(keyCode, currentFocus)
-        if (didDoubleTapR) {
+        val didDoubleTapR = currentFocus?.let {
+          Assertions.assertNotNull(doubleTapReloadRecognizer)
+            .didDoubleTapR(keyCode, it)
+        }
+        if (didDoubleTapR == true) {
           devSupportManager.call("reloadExpoApp")
           return true
         }

@@ -3,7 +3,6 @@ import { UnavailabilityError } from 'expo-modules-core';
 import {
   CameraCapturedPicture,
   CameraPictureOptions,
-  CameraType,
   PermissionResponse,
   PermissionStatus,
 } from './Camera.types';
@@ -12,7 +11,7 @@ import {
   canGetUserMedia,
   isBackCameraAvailableAsync,
   isFrontCameraAvailableAsync,
-} from './WebUserMediaManager';
+} from './web/WebUserMediaManager';
 
 function getUserMedia(constraints: MediaStreamConstraints): Promise<MediaStream> {
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -182,8 +181,8 @@ export default {
     const devices = await navigator.mediaDevices.enumerateDevices();
 
     const types: (string | null)[] = await Promise.all([
-      (await isFrontCameraAvailableAsync(devices)) && CameraType.front,
-      (await isBackCameraAvailableAsync()) && CameraType.back,
+      (await isFrontCameraAvailableAsync(devices)) && 'front',
+      (await isBackCameraAvailableAsync()) && 'back',
     ]);
 
     return types.filter(Boolean) as string[];

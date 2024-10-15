@@ -34,7 +34,7 @@ export declare class Asset {
      * asset. When running the app from Expo CLI during development, this URI points to Expo CLI's
      * server running on your computer and the asset is served directly from your computer. If you
      * are not using Classic Updates (legacy), this field should be ignored as we ensure your assets
-     * are on device before before running your application logic.
+     * are on device before running your application logic.
      */
     readonly uri: string;
     /**
@@ -81,7 +81,7 @@ export declare class Asset {
     static fromURI(uri: string): Asset;
     /**
      * Downloads the asset data to a local file in the device's cache directory. Once the returned
-     * promise is fulfilled without error, the [`localUri`](#assetlocaluri) field of this asset points
+     * promise is fulfilled without error, the [`localUri`](#localuri) field of this asset points
      * to a local file containing the asset data. The asset is only downloaded if an up-to-date local
      * file for the asset isn't already present due to an earlier download. The downloaded `Asset`
      * will be returned when the promise is resolved.

@@ -4,13 +4,28 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
+- Add missing `react` and `react-native` peer dependencies for isolated modules. ([#30457](https://github.com/expo/expo/pull/30457) by [@byCedric](https://github.com/byCedric))
+- Fixed `bounds` incorrectly being returned as `boundingBox` in BarcodeScanningResult when using ExpoCameraView on Android. ([#30510](https://github.com/expo/expo/pull/30510) by [@devon94](https://github.com/devon94))
+
 ### 💡 Others
 
+## 13.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.0 — 2024-04-18
+
+### 💡 Others
+
+- Prevent config plugin from writing permissions until prebuild. ([#28107](https://github.com/expo/expo/pull/28107) by [@EvanBacon](https://github.com/EvanBacon))
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 12.9.3 - 2024-02-16
 

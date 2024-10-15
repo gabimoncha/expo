@@ -1,7 +1,7 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
-import { Camera, CameraType } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera/legacy';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -257,7 +257,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: PlatformColor('labelColor'),
+    ...Platform.select({
+      ios: { color: PlatformColor('labelColor') },
+    }),
   },
   videoExample: {
     justifyContent: 'center',

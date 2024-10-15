@@ -3,11 +3,12 @@ import { vol } from 'memfs';
 import path from 'path';
 
 import { mockSpawnPromise } from '../../__tests__/spawn-utils';
-import { PNPM_WORKSPACE_FILE } from '../../utils/nodeWorkspaces';
 import { PnpmPackageManager } from '../PnpmPackageManager';
 
 jest.mock('@expo/spawn-async');
-jest.mock('fs');
+// Jest doesn't mock `node:fs` when mocking `fs`
+jest.mock('fs', () => require('memfs').fs);
+jest.mock('node:fs', () => require('memfs').fs);
 
 const originalCI = process.env.CI;
 
@@ -59,6 +60,19 @@ describe('PnpmPackageManager', () => {
         expect.objectContaining({
           env: { ADBLOCK: '0', DISABLE_OPENCOLLECTIVE: '1' },
         })
+      );
+    });
+  });
+
+  describe('runBinAsync', () => {
+    it('executes pnpm with the expected command and options', async () => {
+      const pnpm = new PnpmPackageManager({ cwd: projectRoot });
+      await pnpm.runBinAsync(['eslint', '.']);
+
+      expect(spawnAsync).toHaveBeenCalledWith(
+        'pnpm',
+        expect.arrayContaining(['eslint', '.']),
+        expect.objectContaining({ cwd: projectRoot })
       );
     });
   });
@@ -437,10 +451,8 @@ describe('PnpmPackageManager', () => {
       vol.fromJSON(
         {
           'packages/test/package.json': JSON.stringify({ name: 'project' }),
-          'package.json': JSON.stringify({
-            name: 'monorepo',
-          }),
-          [PNPM_WORKSPACE_FILE]: 'packages:\n  - packages/*',
+          'package.json': JSON.stringify({ name: 'monorepo' }),
+          'pnpm-workspace.yaml': 'packages:\n  - packages/*',
         },
         workspaceRoot
       );

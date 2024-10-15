@@ -1,4 +1,4 @@
-import { ProxyNativeModule } from 'expo-modules-core';
+import { NativeModule } from 'expo-modules-core';
 
 import {
   Manifest,
@@ -12,12 +12,17 @@ import {
   UpdatesNativeStateMachineContext,
 } from './Updates.types';
 
+type UpdatesEvents = {
+  'Expo.nativeUpdatesStateChangeEvent'(params: any);
+};
+
 /**
  * @internal
  */
-export interface ExpoUpdatesModule
-  extends Pick<ProxyNativeModule, 'addListener' | 'removeListeners'> {
-  isEmergencyLaunch?: boolean;
+export declare class ExpoUpdatesModule extends NativeModule<UpdatesEvents> {
+  isEmergencyLaunch: boolean;
+  emergencyLaunchReason: string | null;
+  launchDuration: number | null;
   isEmbeddedLaunch: boolean;
   isEnabled: boolean;
   isUsingEmbeddedAssets?: boolean;
@@ -43,6 +48,13 @@ export interface ExpoUpdatesModule
   manifest?: Manifest;
   localAssets?: Record<string, string>;
 
+  initialContext: UpdatesNativeStateMachineContext & {
+    latestManifestString?: string;
+    downloadedManifestString?: string;
+    lastCheckForUpdateTimeString?: string;
+    rollbackString?: string;
+  };
+
   reload: () => Promise<void>;
   checkForUpdateAsync: () => Promise<
     | UpdateCheckResultRollBack
@@ -59,13 +71,5 @@ export interface ExpoUpdatesModule
         ({ manifestString: string } | { manifest: Manifest }))
     | UpdateFetchResultFailure
     | UpdateFetchResultRollBackToEmbedded
-  >;
-  getNativeStateMachineContextAsync: () => Promise<
-    UpdatesNativeStateMachineContext & {
-      latestManifestString?: string;
-      downloadedManifestString?: string;
-      lastCheckForUpdateTimeString?: string;
-      rollbackString?: string;
-    }
   >;
 }

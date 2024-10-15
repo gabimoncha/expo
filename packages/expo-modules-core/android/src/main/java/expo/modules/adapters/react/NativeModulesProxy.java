@@ -1,23 +1,19 @@
 package expo.modules.adapters.react;
 
-import android.util.SparseArray;
-
-import com.facebook.react.bridge.Dynamic;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.ReadableType;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
 
+import androidx.annotation.NonNull;
 import expo.modules.core.ModuleRegistry;
 import expo.modules.kotlin.CoreLoggerKt;
 import expo.modules.kotlin.ExpoModulesHelper;
@@ -35,23 +31,15 @@ public class NativeModulesProxy extends ReactContextBaseJavaModule {
   private final static String MODULES_CONSTANTS_KEY = "modulesConstants";
   private final static String EXPORTED_METHODS_KEY = "exportedMethods";
 
-  private final static String METHOD_INFO_KEY = "key";
-  private final static String METHOD_INFO_NAME = "name";
-
-  private final static String UNEXPECTED_ERROR = "E_UNEXPECTED_ERROR";
   private final static String UNDEFINED_METHOD_ERROR = "E_UNDEFINED_METHOD";
 
   private ModuleRegistry mModuleRegistry;
-  private Map<String, Map<String, Integer>> mExportedMethodsKeys;
-  private Map<String, SparseArray<String>> mExportedMethodsReverseKeys;
   private KotlinInteropModuleRegistry mKotlinInteropModuleRegistry;
   private Map<String, Object> cachedConstants;
 
   public NativeModulesProxy(ReactApplicationContext context, ModuleRegistry moduleRegistry) {
     super(context);
     mModuleRegistry = moduleRegistry;
-    mExportedMethodsKeys = new HashMap<>();
-    mExportedMethodsReverseKeys = new HashMap<>();
 
     mKotlinInteropModuleRegistry = new KotlinInteropModuleRegistry(
       Objects.requireNonNull(ExpoModulesHelper.Companion.getModulesProvider()),
@@ -63,8 +51,6 @@ public class NativeModulesProxy extends ReactContextBaseJavaModule {
   public NativeModulesProxy(ReactApplicationContext context, ModuleRegistry moduleRegistry, ModulesProvider modulesProvider) {
     super(context);
     mModuleRegistry = moduleRegistry;
-    mExportedMethodsKeys = new HashMap<>();
-    mExportedMethodsReverseKeys = new HashMap<>();
 
     mKotlinInteropModuleRegistry = new KotlinInteropModuleRegistry(
       Objects.requireNonNull(modulesProvider),
@@ -77,6 +63,7 @@ public class NativeModulesProxy extends ReactContextBaseJavaModule {
     return mKotlinInteropModuleRegistry;
   }
 
+  @NonNull
   @Override
   public String getName() {
     return NAME;
@@ -92,15 +79,12 @@ public class NativeModulesProxy extends ReactContextBaseJavaModule {
     mModuleRegistry.ensureIsInitialized();
 
     KotlinInteropModuleRegistry kotlinModuleRegistry = getKotlinInteropModuleRegistry();
-    kotlinModuleRegistry.emitOnCreate();
     kotlinModuleRegistry.installJSIInterop();
+    kotlinModuleRegistry.emitOnCreate();
 
     Map<String, Object> constants = new HashMap<>(3);
-    constants.put(MODULES_CONSTANTS_KEY, mKotlinInteropModuleRegistry.exportedModulesConstants());
-    constants.put(EXPORTED_METHODS_KEY, mKotlinInteropModuleRegistry.exportMethods((name, info) -> {
-      assignExportedMethodsKeys(name, (List<Map<String, Object>>) info);
-      return null;
-    }));
+    constants.put(MODULES_CONSTANTS_KEY, new HashMap<>());
+    constants.put(EXPORTED_METHODS_KEY, new HashMap<>());
     constants.put(VIEW_MANAGERS_METADATA_KEY, mKotlinInteropModuleRegistry.viewManagersMetadata());
 
     CoreLoggerKt.getLogger().info("✅ Constants were exported");
@@ -111,28 +95,14 @@ public class NativeModulesProxy extends ReactContextBaseJavaModule {
   }
 
   /**
-   * The only exported {@link ReactMethod}.
+   * The only exported {@link ReactMethod} for legacy NativeUnimoduleProxy.
+   * This is used only when JSI is not available. i.e. the legacy remote debugging.
    * JavaScript can call native modules' exported methods ({@link ExpoMethod}) using this method as a proxy.
    * For native {@link ExpoMethod} `void put(String key, int value)` in `NativeDictionary` module
-   * JavaScript could call `NativeModulesProxy.callMethod("NativeDictionary", "put", ["key", 42])`
-   * or `NativeModulesProxy.callMethod("NativeDictionary", 2, ["key", 42])`, where the second argument
+   * JavaScript could call `NativeModulesProxy.callMethod("NativeDictionary", 2, ["key", 42])`, where the second argument
    * is a method's constant key.
    */
   @ReactMethod
-  public void callMethod(String moduleName, Dynamic methodKeyOrName, ReadableArray arguments, final Promise promise) {
-    String methodName;
-    if (methodKeyOrName.getType() == ReadableType.String) {
-      methodName = methodKeyOrName.asString();
-    } else if (methodKeyOrName.getType() == ReadableType.Number) {
-      methodName = mExportedMethodsReverseKeys.get(moduleName).get(methodKeyOrName.asInt());
-    } else {
-      promise.reject(UNEXPECTED_ERROR, "Method key is neither a String nor an Integer -- don't know how to map it to method name.");
-      return;
-    }
-
-    callMethod(moduleName, methodName, arguments, promise);
-  }
-
   public void callMethod(String moduleName, String methodName, ReadableArray arguments, final Promise promise) {
     if (mKotlinInteropModuleRegistry.hasModule(moduleName)) {
       mKotlinInteropModuleRegistry.callMethod(moduleName, methodName, arguments, new KPromiseWrapper(promise));
@@ -145,42 +115,9 @@ public class NativeModulesProxy extends ReactContextBaseJavaModule {
     );
   }
 
-  /**
-   * Assigns keys to exported method infos and updates {@link #mExportedMethodsKeys} and {@link #mExportedMethodsReverseKeys}.
-   * Mutates maps in provided list.
-   */
-  private void assignExportedMethodsKeys(String moduleName, List<Map<String, Object>> exportedMethodsInfos) {
-    if (mExportedMethodsKeys.get(moduleName) == null) {
-      mExportedMethodsKeys.put(moduleName, new HashMap<String, Integer>());
-    }
-
-    if (mExportedMethodsReverseKeys.get(moduleName) == null) {
-      mExportedMethodsReverseKeys.put(moduleName, new SparseArray<String>());
-    }
-
-    for (int i = 0; i < exportedMethodsInfos.size(); i++) {
-      Map<String, Object> methodInfo = exportedMethodsInfos.get(i);
-
-      if (methodInfo.get(METHOD_INFO_NAME) == null || !(methodInfo.get(METHOD_INFO_NAME) instanceof String)) {
-        throw new RuntimeException("No method name in MethodInfo - " + methodInfo.toString());
-      }
-
-      String methodName = (String) methodInfo.get(METHOD_INFO_NAME);
-      Integer maybePreviousIndex = mExportedMethodsKeys.get(moduleName).get(methodName);
-      if (maybePreviousIndex == null) {
-        int key = mExportedMethodsKeys.get(moduleName).values().size();
-        methodInfo.put(METHOD_INFO_KEY, key);
-        mExportedMethodsKeys.get(moduleName).put(methodName, key);
-        mExportedMethodsReverseKeys.get(moduleName).put(key, methodName);
-      } else {
-        int key = maybePreviousIndex;
-        methodInfo.put(METHOD_INFO_KEY, key);
-      }
-    }
-  }
-
   @Override
-  public void onCatalystInstanceDestroy() {
+  public void invalidate() {
+    super.invalidate();
     mModuleRegistry.onDestroy();
     mKotlinInteropModuleRegistry.onDestroy();
   }

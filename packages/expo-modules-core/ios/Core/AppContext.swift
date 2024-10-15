@@ -1,3 +1,5 @@
+import React
+
 /**
  The app context is an interface to a single Expo app.
  */
@@ -32,7 +34,15 @@ public final class AppContext: NSObject {
    The legacy module registry with modules written in the old-fashioned way.
    */
   @objc
-  public weak var legacyModuleRegistry: EXModuleRegistry?
+  public weak var legacyModuleRegistry: EXModuleRegistry? {
+    didSet {
+      if let registry = legacyModuleRegistry,
+        let legacyModule = registry.getModuleImplementingProtocol(EXFileSystemInterface.self) as? EXFileSystemInterface,
+        let fileSystemLegacyModule = legacyModule as? FileSystemLegacyUtilities {
+        fileSystemLegacyModule.maybeInitAppGroupSharedDirectories(self.config.appGroupSharedDirectories)
+      }
+    }
+  }
 
   @objc
   public weak var legacyModulesProxy: LegacyNativeModulesProxy?
@@ -76,6 +86,28 @@ public final class AppContext: NSObject {
   }
 
   /**
+   The application identifier that is used to distinguish between different `RCTHost`.
+   It might be equal to `nil`, meaning we couldn't obtain the Id for the current app.
+   It shouldn't be used on the old architecture.
+   */
+  @objc
+  public var appIdentifier: String? {
+    #if RCT_NEW_ARCH_ENABLED
+    guard let moduleRegistry = reactBridge?.moduleRegistry else {
+      return nil
+    }
+    return "\(abs(ObjectIdentifier(moduleRegistry).hashValue))"
+    #else
+    return nil
+    #endif
+  }
+
+  /**
+   Code signing entitlements for code signing
+   */
+  public let appCodeSignEntitlements = AppContext.modulesProvider().getAppCodeSignEntitlements()
+
+  /**
    The core module that defines the `expo` object in the global scope of Expo runtime.
    */
   internal private(set) lazy var coreModule = CoreModule(appContext: self)
@@ -85,17 +117,19 @@ public final class AppContext: NSObject {
    */
   internal private(set) lazy var coreModuleHolder = ModuleHolder(appContext: self, module: coreModule)
 
+  internal private(set) lazy var converter = MainValueConverter(appContext: self)
+
   /**
    Designated initializer without modules provider.
    */
-  public init(config: AppContextConfig = .default) {
-    self.config = config
+  public init(config: AppContextConfig? = nil) {
+    self.config = config ?? AppContextConfig(documentDirectory: nil, cacheDirectory: nil, appGroups: appCodeSignEntitlements.appGroups)
 
     super.init()
     listenToClientAppNotifications()
   }
 
-  public convenience init(legacyModulesProxy: Any, legacyModuleRegistry: Any, config: AppContextConfig = .default) {
+  public convenience init(legacyModulesProxy: Any, legacyModuleRegistry: Any, config: AppContextConfig? = nil) {
     self.init(config: config)
     self.legacyModulesProxy = legacyModulesProxy as? LegacyNativeModulesProxy
     self.legacyModuleRegistry = legacyModuleRegistry as? EXModuleRegistry
@@ -103,7 +137,7 @@ public final class AppContext: NSObject {
 
   @objc
   public convenience override init() {
-    self.init(config: .default)
+    self.init(config: nil)
   }
 
   @objc
@@ -121,14 +155,7 @@ public final class AppContext: NSObject {
   // MARK: - UI
 
   public func findView<ViewType>(withTag viewTag: Int, ofType type: ViewType.Type) -> ViewType? {
-    let view: UIView? = reactBridge?.uiManager.view(forReactTag: NSNumber(value: viewTag))
-
-    #if RN_FABRIC_ENABLED
-    if let view = view as? ExpoFabricViewObjC {
-      return view.contentView as? ViewType
-    }
-    #endif
-    return view as? ViewType
+    return reactBridge?.uiManager.view(forReactTag: NSNumber(value: viewTag)) as? ViewType
   }
 
   // MARK: - Running on specific queues
@@ -211,10 +238,10 @@ public final class AppContext: NSObject {
   }
 
   /**
-   Provides access to the event emitter from legacy module registry.
+   Provides an event emitter that is compatible with the legacy interface.
    */
   public var eventEmitter: EXEventEmitterService? {
-    return legacyModule(implementing: EXEventEmitterService.self)
+    return LegacyEventEmitterCompat(appContext: self)
   }
 
   /**
@@ -396,6 +423,8 @@ public final class AppContext: NSObject {
     let runtime = try runtime
     let coreObject = runtime.createObject()
 
+    coreObject.defineProperty("__expo_app_identifier__", value: appIdentifier, options: [])
+
     try coreModuleHolder.definition.decorate(object: coreObject, appContext: self)
 
     // Initialize `global.expo`.
@@ -408,6 +437,9 @@ public final class AppContext: NSObject {
     EXJavaScriptRuntimeManager.installSharedObjectClass(runtime) { [weak sharedObjectRegistry] objectId in
       sharedObjectRegistry?.delete(objectId)
     }
+    
+    // Install `global.expo.SharedRef`.
+    EXJavaScriptRuntimeManager.installSharedRefClass(runtime)
 
     // Install `global.expo.NativeModule`.
     EXJavaScriptRuntimeManager.installNativeModuleClass(runtime)

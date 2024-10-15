@@ -23,7 +23,7 @@ inline jsi::Object getCoreObject(jsi::Runtime &runtime) {
 /**
  Type of the native constructor of the JS classes.
  */
-typedef std::function<void(jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args, size_t count)> ClassConstructor;
+typedef std::function<jsi::Value(jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args, size_t count)> ClassConstructor;
 
 /**
  Creates a class with the given name and native constructor.
@@ -64,7 +64,7 @@ struct PropertyDescriptor {
 /**
  Defines the property on the object with the provided descriptor options.
  */
-void defineProperty(jsi::Runtime &runtime, jsi::Object *object, const char *name, const PropertyDescriptor descriptor);
+void defineProperty(jsi::Runtime &runtime, jsi::Object *object, const char *name, const PropertyDescriptor& descriptor);
 
 /**
  Calls `Object.defineProperty(object, name, descriptor)`.

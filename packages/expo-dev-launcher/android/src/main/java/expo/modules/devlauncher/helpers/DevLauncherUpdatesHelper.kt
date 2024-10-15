@@ -19,7 +19,6 @@ suspend fun UpdatesInterface.loadUpdate(
   suspendCoroutine { cont ->
     this.fetchUpdateWithConfiguration(
       configuration,
-      context,
       object : UpdatesInterface.UpdateCallback {
         override fun onSuccess(update: UpdatesInterface.Update?) {
           // if the update is null, we previously aborted the fetch, so we've already resumed
@@ -34,10 +33,9 @@ suspend fun UpdatesInterface.loadUpdate(
             true
           } else {
             cont.resume(object : UpdatesInterface.Update {
-              override fun getLaunchAssetPath(): String {
-                throw Exception("Tried to access launch asset path for a manifest that was not loaded")
-              }
-              override fun getManifest(): JSONObject = manifest
+              override val manifest: JSONObject = manifest
+              override val launchAssetPath: String
+                get() = throw Exception("Tried to access launch asset path for a manifest that was not loaded")
             })
             false
           }
@@ -61,10 +59,6 @@ fun createUpdatesConfigurationWithUrl(url: Uri, projectUrl: Uri, runtimeVersion:
     "checkOnLaunch" to "ALWAYS",
     "enabled" to true,
     "requestHeaders" to requestHeaders,
-    "runtimeVersion" to runtimeVersion,
+    "runtimeVersion" to runtimeVersion
   )
-}
-
-fun getRuntimeVersion(context: Context): String {
-  return DevLauncherMetadataHelper.getMetadataValue(context, "expo.modules.updates.EXPO_RUNTIME_VERSION")
 }

@@ -13,9 +13,15 @@ import { isNodeExternal } from './externals';
 import { formatFileCandidates } from './formatFileCandidates';
 import { isServerEnvironment } from '../middleware/metroOptions';
 
-class FailedToResolvePathError extends Error {}
+export class FailedToResolvePathError extends Error {
+  // Added to ensure the error is matched by our tooling.
+  // TODO: Test that this matches `isFailedToResolvePathError`
+  candidates = {};
+}
 
 class ShimModuleError extends Error {}
+
+const debug = require('debug')('expo:metro:resolve') as typeof console.log;
 
 const realpathFS =
   process.platform !== 'win32' && fs.realpathSync && typeof fs.realpathSync.native === 'function'
@@ -40,6 +46,7 @@ export function createFastResolver({
   preserveSymlinks: boolean;
   blockList: RegExp[];
 }) {
+  debug('Creating with settings:', { preserveSymlinks, blockList });
   const cachedExtensions: Map<string, readonly string[]> = new Map();
 
   function getAdjustedExtensions({
@@ -110,31 +117,56 @@ export function createFastResolver({
 
     let fp: string;
 
+    const conditions = context.unstable_enablePackageExports
+      ? [
+          ...new Set([
+            'default',
+            ...context.unstable_conditionNames,
+            ...(platform != null ? (context.unstable_conditionsByPlatform[platform] ?? []) : []),
+          ]),
+        ]
+      : [];
+    const { unstable_fileSystemLookup } = context as {
+      unstable_fileSystemLookup?: (
+        filePath: string
+      ) => { exists: false } | { exists: true; type: 'f' | 'd'; realPath: string };
+    };
+    if (!unstable_fileSystemLookup) {
+      throw new Error('Metro API unstable_fileSystemLookup is required for fast resolver');
+    }
     try {
-      const conditions = context.unstable_enablePackageExports
-        ? [
-            ...new Set([
-              'default',
-              ...context.unstable_conditionNames,
-              ...(platform != null ? context.unstable_conditionsByPlatform[platform] ?? [] : []),
-            ]),
-          ]
-        : [];
-
       fp = jestResolver(moduleName, {
         blockList,
         enablePackageExports: context.unstable_enablePackageExports,
         basedir: path.dirname(context.originModulePath),
-        paths: context.nodeModulesPaths.length ? (context.nodeModulesPaths as string[]) : undefined,
+        moduleDirectory: context.nodeModulesPaths.length
+          ? (context.nodeModulesPaths as string[])
+          : undefined,
         extensions,
         conditions,
         realpathSync(file: string): string {
-          // @ts-expect-error: Missing on type.
-          const metroRealPath = context.unstable_getRealPath?.(file);
+          let metroRealPath: string | null = null;
+
+          const res = unstable_fileSystemLookup(file);
+          if (res?.exists) {
+            metroRealPath = res.realPath;
+          }
+
           if (metroRealPath == null && preserveSymlinks) {
             return realpathSync(file);
           }
           return metroRealPath ?? file;
+        },
+        isDirectory(file: string): boolean {
+          const res = unstable_fileSystemLookup(file);
+          return res.exists && res.type === 'd';
+        },
+        isFile(file: string): boolean {
+          const res = unstable_fileSystemLookup(file);
+          return res.exists && res.type === 'f';
+        },
+        pathExists(file: string): boolean {
+          return unstable_fileSystemLookup(file).exists;
         },
         packageFilter(pkg) {
           // set the pkg.main to the first available field in context.mainFields
@@ -156,13 +188,7 @@ export function createFastResolver({
         // the app doesn't finish without it.
         preserveSymlinks,
         readPackageSync(readFileSync, pkgFile) {
-          return (
-            context.getPackage(pkgFile) ??
-            JSON.parse(
-              // @ts-expect-error
-              readFileSync(pkgfile)
-            )
-          );
+          return context.getPackage(pkgFile) ?? JSON.parse(fs.readFileSync(pkgFile, 'utf8'));
         },
         includeCoreModules: isServer,
 
@@ -205,6 +231,8 @@ export function createFastResolver({
             type: 'empty',
           };
         }
+
+        debug({ moduleName, platform, conditions, isServer, preserveSymlinks }, context);
 
         throw new FailedToResolvePathError(
           'The module could not be resolved because no file or module matched the pattern:\n' +

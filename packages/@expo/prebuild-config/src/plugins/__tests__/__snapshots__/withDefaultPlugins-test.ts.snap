@@ -405,7 +405,6 @@ exports[`built-in plugins compiles mods 1`] = `
       "usesNonExemptEncryption": true,
     },
     "entitlements": {
-      "aps-environment": "development",
       "com.apple.developer.associated-domains": [
         "applinks:https://pillarvalley.netlify.app",
       ],
@@ -449,7 +448,7 @@ exports[`built-in plugins compiles mods 1`] = `
       "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location",
       "UILaunchStoryboardName": "SplashScreen",
       "UIRequiredDeviceCapabilities": [
-        "armv7",
+        "arm64",
       ],
       "UIRequiresFullScreen": true,
       "UIStatusBarStyle": "UIStatusBarStyleDefault",
@@ -668,10 +667,10 @@ exports[`built-in plugins introspects mods 1`] = `
           },
           {
             "type": "comment",
-            "value": "Automatically convert third-party libraries to use AndroidX",
+            "value": "Enable AAPT2 PNG crunching",
           },
           {
-            "key": "android.enableJetifier",
+            "key": "android.enablePngCrunchInReleaseBuilds",
             "type": "property",
             "value": "true",
           },
@@ -815,6 +814,7 @@ exports[`built-in plugins introspects mods 1`] = `
                   "android:label": "@string/app_name",
                   "android:name": ".MainApplication",
                   "android:roundIcon": "@mipmap/ic_launcher_round",
+                  "android:supportsRtl": "true",
                   "android:theme": "@style/AppTheme",
                 },
                 "activity": [
@@ -923,12 +923,6 @@ exports[`built-in plugins introspects mods 1`] = `
                 "meta-data": [
                   {
                     "$": {
-                      "android:name": "expo.modules.updates.EXPO_RUNTIME_VERSION",
-                      "android:value": "@string/expo_runtime_version",
-                    },
-                  },
-                  {
-                    "$": {
                       "android:name": "expo.modules.updates.ENABLED",
                       "android:value": "true",
                     },
@@ -943,6 +937,12 @@ exports[`built-in plugins introspects mods 1`] = `
                     "$": {
                       "android:name": "expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS",
                       "android:value": "650",
+                    },
+                  },
+                  {
+                    "$": {
+                      "android:name": "expo.modules.updates.EXPO_RUNTIME_VERSION",
+                      "android:value": "@string/expo_runtime_version",
                     },
                   },
                   {
@@ -1141,15 +1141,9 @@ exports[`built-in plugins introspects mods 1`] = `
                   },
                   {
                     "$": {
-                      "name": "android:windowTranslucentStatus",
+                      "name": "android:statusBarColor",
                     },
-                    "_": "true",
-                  },
-                  {
-                    "$": {
-                      "name": "colorPrimaryDark",
-                    },
-                    "_": "@color/colorPrimaryDark",
+                    "_": "@android:color/transparent",
                   },
                   {
                     "$": {
@@ -1217,7 +1211,6 @@ exports[`built-in plugins introspects mods 1`] = `
       },
       "ios": {
         "entitlements": {
-          "aps-environment": "development",
           "com.apple.developer.associated-domains": [
             "applinks:https://pillarvalley.netlify.app",
           ],
@@ -1266,7 +1259,7 @@ exports[`built-in plugins introspects mods 1`] = `
           "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location",
           "UILaunchStoryboardName": "SplashScreen",
           "UIRequiredDeviceCapabilities": [
-            "armv7",
+            "arm64",
           ],
           "UIRequiresFullScreen": true,
           "UIStatusBarStyle": "UIStatusBarStyleDefault",
@@ -1688,7 +1681,6 @@ exports[`built-in plugins introspects mods 1`] = `
       "usesNonExemptEncryption": true,
     },
     "entitlements": {
-      "aps-environment": "development",
       "com.apple.developer.associated-domains": [
         "applinks:https://pillarvalley.netlify.app",
       ],
@@ -1732,7 +1724,7 @@ exports[`built-in plugins introspects mods 1`] = `
       "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location",
       "UILaunchStoryboardName": "SplashScreen",
       "UIRequiredDeviceCapabilities": [
-        "armv7",
+        "arm64",
       ],
       "UIRequiresFullScreen": true,
       "UIStatusBarStyle": "UIStatusBarStyleDefault",
@@ -2181,15 +2173,9 @@ exports[`built-in plugins introspects mods in a managed project 1`] = `
                   },
                   {
                     "$": {
-                      "name": "android:windowTranslucentStatus",
+                      "name": "android:statusBarColor",
                     },
-                    "_": "true",
-                  },
-                  {
-                    "$": {
-                      "name": "colorPrimaryDark",
-                    },
-                    "_": "@color/colorPrimaryDark",
+                    "_": "@android:color/transparent",
                   },
                   {
                     "$": {
@@ -2231,7 +2217,6 @@ exports[`built-in plugins introspects mods in a managed project 1`] = `
       },
       "ios": {
         "entitlements": {
-          "aps-environment": "development",
           "com.apple.developer.associated-domains": [
             "applinks:https://pillarvalley.netlify.app",
           ],
@@ -2659,7 +2644,6 @@ exports[`built-in plugins introspects mods in a managed project 1`] = `
       "usesNonExemptEncryption": true,
     },
     "entitlements": {
-      "aps-environment": "development",
       "com.apple.developer.associated-domains": [
         "applinks:https://pillarvalley.netlify.app",
       ],

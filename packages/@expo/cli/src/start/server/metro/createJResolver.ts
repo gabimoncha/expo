@@ -14,8 +14,6 @@ import { dirname, isAbsolute, resolve as pathResolve } from 'path';
 import { sync as resolveSync, SyncOpts as UpstreamResolveOptions } from 'resolve';
 import * as resolve from 'resolve.exports';
 
-import { directoryExistsSync, fileExistsSync } from '../../../utils/dir';
-
 /**
  * Allows transforming parsed `package.json` contents.
  *
@@ -83,7 +81,10 @@ type ResolverOptions = {
   | 'includeCoreModules'
 >;
 
-type UpstreamResolveOptionsWithConditions = UpstreamResolveOptions & ResolverOptions;
+type UpstreamResolveOptionsWithConditions = UpstreamResolveOptions &
+  ResolverOptions & {
+    pathExists: (file: string) => boolean;
+  };
 
 const defaultResolver = (
   path: string,
@@ -91,24 +92,15 @@ const defaultResolver = (
     enablePackageExports,
     blockList = [],
     ...options
-  }: Omit<ResolverOptions, 'defaultResolver' | 'getPackageForModule'>
+  }: Omit<ResolverOptions, 'defaultResolver' | 'getPackageForModule'> & {
+    isDirectory: (file: string) => boolean;
+    isFile: (file: string) => boolean;
+    pathExists: (file: string) => boolean;
+  }
 ): string => {
   // @ts-expect-error
   const resolveOptions: UpstreamResolveOptionsWithConditions = {
     ...options,
-
-    isDirectory(file) {
-      if (blockList.some((regex) => regex.test(file))) {
-        return false;
-      }
-      return directoryExistsSync(file);
-    },
-    isFile(file) {
-      if (blockList.some((regex) => regex.test(file))) {
-        return false;
-      }
-      return fileExistsSync(file);
-    },
     preserveSymlinks: options.preserveSymlinks,
     defaultResolver,
   };
@@ -138,53 +130,26 @@ function getPathInModule(path: string, options: UpstreamResolveOptionsWithCondit
 
   let moduleName = segments.shift();
 
-  if (moduleName) {
-    if (moduleName.startsWith('@')) {
-      moduleName = `${moduleName}/${segments.shift()}`;
-    }
+  if (!moduleName) {
+    return path;
+  }
 
-    // Disable package exports for babel/runtime for https://github.com/facebook/metro/issues/984/
-    if (moduleName === '@babel/runtime') {
-      return path;
-    }
+  if (moduleName.startsWith('@')) {
+    moduleName = `${moduleName}/${segments.shift()}`;
+  }
 
-    // self-reference
-    const closestPackageJson = findClosestPackageJson(options.basedir, options);
-    if (closestPackageJson) {
-      const pkg = options.readPackageSync!(options.readFileSync!, closestPackageJson);
-      assert(pkg, 'package.json should be read by `readPackageSync`');
+  // Disable package exports for babel/runtime for https://github.com/facebook/metro/issues/984/
+  if (moduleName === '@babel/runtime') {
+    return path;
+  }
 
-      if (pkg.name === moduleName) {
-        const resolved = resolve.exports(
-          pkg,
-          (segments.join('/') || '.') as resolve.Exports.Entry,
-          createResolveOptions(options.conditions)
-        );
+  // self-reference
+  const closestPackageJson = findClosestPackageJson(options.basedir, options);
+  if (closestPackageJson) {
+    const pkg = options.readPackageSync!(options.readFileSync!, closestPackageJson);
+    assert(pkg, 'package.json should be read by `readPackageSync`');
 
-        if (resolved) {
-          return pathResolve(dirname(closestPackageJson), resolved[0]);
-        }
-
-        if (pkg.exports) {
-          throw new Error(
-            "`exports` exists, but no results - this is a bug in Expo CLI's Metro resolver. Please report an issue"
-          );
-        }
-      }
-    }
-
-    let packageJsonPath = '';
-
-    try {
-      packageJsonPath = resolveSync(`${moduleName}/package.json`, options);
-    } catch {
-      // ignore if package.json cannot be found
-    }
-
-    if (packageJsonPath && options.isFile!(packageJsonPath)) {
-      const pkg = options.readPackageSync!(options.readFileSync!, packageJsonPath);
-      assert(pkg, 'package.json should be read by `readPackageSync`');
-
+    if (pkg.name === moduleName) {
       const resolved = resolve.exports(
         pkg,
         (segments.join('/') || '.') as resolve.Exports.Entry,
@@ -192,7 +157,7 @@ function getPathInModule(path: string, options: UpstreamResolveOptionsWithCondit
       );
 
       if (resolved) {
-        return pathResolve(dirname(packageJsonPath), resolved[0]);
+        return pathResolve(dirname(closestPackageJson), resolved[0]);
       }
 
       if (pkg.exports) {
@@ -201,6 +166,37 @@ function getPathInModule(path: string, options: UpstreamResolveOptionsWithCondit
         );
       }
     }
+  }
+
+  let packageJsonPath = '';
+
+  try {
+    packageJsonPath = resolveSync(`${moduleName}/package.json`, options);
+  } catch {
+    // ignore if package.json cannot be found
+  }
+
+  if (!packageJsonPath) {
+    return path;
+  }
+
+  const pkg = options.readPackageSync!(options.readFileSync!, packageJsonPath);
+  assert(pkg, 'package.json should be read by `readPackageSync`');
+
+  const resolved = resolve.exports(
+    pkg,
+    (segments.join('/') || '.') as resolve.Exports.Entry,
+    createResolveOptions(options.conditions)
+  );
+
+  if (resolved) {
+    return pathResolve(dirname(packageJsonPath), resolved[0]);
+  }
+
+  if (pkg.exports) {
+    throw new Error(
+      "`exports` exists, but no results - this is a bug in Expo CLI's Metro resolver. Please report an issue"
+    );
   }
 
   return path;
@@ -220,7 +216,7 @@ const shouldIgnoreRequestForExports = (path: string) => path.startsWith('.') || 
 // https://github.com/lukeed/escalade/blob/2477005062cdbd8407afc90d3f48f4930354252b/src/sync.js
 function findClosestPackageJson(
   start: string,
-  options: UpstreamResolveOptions
+  options: UpstreamResolveOptionsWithConditions
 ): string | undefined {
   let dir = pathResolve('.', start);
   if (!options.isDirectory!(dir)) {
@@ -229,7 +225,7 @@ function findClosestPackageJson(
 
   while (true) {
     const pkgJsonFile = pathResolve(dir, './package.json');
-    const hasPackageJson = options.isFile!(pkgJsonFile);
+    const hasPackageJson = options.pathExists!(pkgJsonFile);
 
     if (hasPackageJson) {
       return pkgJsonFile;

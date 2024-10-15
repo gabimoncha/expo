@@ -10,11 +10,10 @@ set(BUILD_DIR ${CMAKE_SOURCE_DIR}/build)
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src/main/cpp")
 file(GLOB SOURCES "${SRC_DIR}/*.cpp")
 
-if (NOT "${SQLITE_CUSTOM_BUILDFLAGS}" STREQUAL "")
-  add_compile_options(
-    "${SQLITE_CUSTOM_BUILDFLAGS}"
-  )
-endif()
+separate_arguments(SQLITE_BUILDFLAGS)
+add_compile_options(
+  ${SQLITE_BUILDFLAGS}
+)
 
 add_library(
   ${PACKAGE_NAME}
@@ -32,10 +31,17 @@ target_include_directories(
 
 find_library(LOG_LIB log)
 find_package(fbjni REQUIRED CONFIG)
+if(${USE_SQLCIPHER})
+  find_package(openssl REQUIRED CONFIG)
+  set(OPENSSL_CRYPTO_LIB "openssl::crypto")
+else()
+  set(OPENSSL_CRYPTO_LIB "")
+endif()
 
 target_link_libraries(
   ${PACKAGE_NAME}
   ${LOG_LIB}
+  ${OPENSSL_CRYPTO_LIB}
   fbjni::fbjni
   android
 )

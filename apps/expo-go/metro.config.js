@@ -11,6 +11,7 @@ module.exports = {
   // NOTE(brentvatne): This can be removed when
   // https://github.com/facebook/metro/issues/290 is fixed.
   server: {
+    ...baseConfig.server,
     enhanceMiddleware: (middleware) => {
       return (req, res, next) => {
         // When an asset is imported outside the project root, it has wrong path on Android
@@ -28,10 +29,6 @@ module.exports = {
 
   resolver: {
     ...baseConfig.resolver,
-    assetExts: [
-      ...baseConfig.resolver.assetExts,
-      'db', // Copied from expo-yarn-workspaces
-    ],
     blockList: [
       // Copied from expo-yarn-workspaces
       /\/__tests__\//,

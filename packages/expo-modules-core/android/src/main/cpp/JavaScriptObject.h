@@ -37,7 +37,7 @@ public:
   static void registerNatives();
 
   static jni::local_ref<JavaScriptObject::javaobject> newInstance(
-    JSIInteropModuleRegistry *jsiInteropModuleRegistry,
+    JSIContext *jsiContext,
     std::weak_ptr<JavaScriptRuntime> runtime,
     std::shared_ptr<jsi::Object> jsObject
   );
@@ -51,6 +51,8 @@ public:
     WeakRuntimeHolder runtime,
     std::shared_ptr<jsi::Object> jsObject
   );
+
+  virtual ~JavaScriptObject() = default;
 
   std::shared_ptr<jsi::Object> get() override;
 
@@ -77,6 +79,11 @@ public:
   void defineNativeDeallocator(
     jni::alias_ref<JNIFunctionBody::javaobject> deallocator
   );
+
+  /**
+   * Sets the memory pressure to inform the GC about how much external memory is associated with that specific JS object.
+  */
+  void setExternalMemoryPressure(int size);
 
 protected:
   WeakRuntimeHolder runtimeHolder;

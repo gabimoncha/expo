@@ -39,6 +39,7 @@ class FullscreenPlayerActivity : Activity() {
       // We need to disable it to keep scrubbing off.
       playerView.setTimeBarInteractive(videoView.videoPlayer?.requiresLinearPlayback ?: true)
     }
+    playerView.setShowSubtitleButton(videoView.showsSubtitlesButton)
   }
 
   override fun finish() {
@@ -46,9 +47,10 @@ class FullscreenPlayerActivity : Activity() {
     VideoManager.getVideoView(videoViewId).exitFullscreen()
 
     // Disable the exit transition
-    if (Build.VERSION.SDK_INT >= 34) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
       overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
     } else {
+      @Suppress("DEPRECATION")
       overridePendingTransition(0, 0)
     }
   }

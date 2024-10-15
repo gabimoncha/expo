@@ -29,14 +29,6 @@ beforeEach(() => {
   jest.mocked(getConfig).mockClear();
 
   process.env._EXPO_INTERNAL_TESTING = '1';
-  delete process.env.EXPO_ROUTER_ABS_APP_ROOT;
-  delete process.env.EXPO_ROUTER_IMPORT_MODE;
-  delete process.env.EXPO_PROJECT_ROOT;
-});
-
-afterEach(() => {
-  delete process.env._EXPO_INTERNAL_TESTING;
-  process.env.NODE_ENV = 'test';
 });
 
 const DEF_OPTIONS = {
@@ -137,8 +129,6 @@ it(`inlines constants`, () => {
   const sourceCode = `
 // EXPO_PROJECT_ROOT
 process.env.EXPO_PROJECT_ROOT;
-// EXPO_PUBLIC_USE_STATIC
-process.env.EXPO_PUBLIC_USE_STATIC;
 // EXPO_ROUTER_ABS_APP_ROOT
 process.env.EXPO_ROUTER_ABS_APP_ROOT;
 // EXPO_ROUTER_APP_ROOT
@@ -147,8 +137,6 @@ process.env.EXPO_ROUTER_APP_ROOT;`;
   expect(babel.transform(sourceCode, options)!.code).toEqual(`
 // EXPO_PROJECT_ROOT
 "/foo/bar";
-// EXPO_PUBLIC_USE_STATIC
-false;
 // EXPO_ROUTER_ABS_APP_ROOT
 "/foo/bar/app";
 // EXPO_ROUTER_APP_ROOT

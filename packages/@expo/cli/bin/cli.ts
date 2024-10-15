@@ -32,6 +32,7 @@ const commands: { [command: string]: () => Promise<Command> } = {
   install: () => import('../src/install/index.js').then((i) => i.expoInstall),
   add: () => import('../src/install/index.js').then((i) => i.expoInstall),
   customize: () => import('../src/customize/index.js').then((i) => i.expoCustomize),
+  lint: () => import('../src/lint/index.js').then((i) => i.expoLint),
 
   // Auth
   login: () => import('../src/login/index.js').then((i) => i.expoLogin),
@@ -95,6 +96,8 @@ if (!isSubcommand && args['--help']) {
     'export:web': exportWeb_unused,
     // Other ignored commands, these are intentially not listed in the `--help` output
     run: _run,
+    // NOTE(cedric): Still pending the migration to ESLint's flat config
+    lint: _lint,
     // All other commands
     ...others
   } = commands;
@@ -170,7 +173,7 @@ if (!isSubcommand) {
   if (subcommand in migrationMap) {
     const replacement = migrationMap[subcommand];
     console.log();
-    const instruction = subcommand === 'upgrade' ? 'follow this guide' : 'use'
+    const instruction = subcommand === 'upgrade' ? 'follow this guide' : 'use';
     console.log(
       chalk.yellow`  {gray $} {bold expo ${subcommand}} is not supported in the local CLI, please ${instruction} {bold ${replacement}} instead`
     );
@@ -201,16 +204,12 @@ process.on('SIGTERM', () => process.exit(0));
 commands[command]().then((exec) => {
   exec(commandArgs);
 
+  // NOTE(EvanBacon): Track some basic telemetry events indicating the command
+  // that was run. This can be disabled with the $EXPO_NO_TELEMETRY environment variable.
+  // We do this to determine how well deprecations are going before removing a command.
   if (!boolish('EXPO_NO_TELEMETRY', false)) {
-    // NOTE(EvanBacon): Track some basic telemetry events indicating the command
-    // that was run. This can be disabled with the $EXPO_NO_TELEMETRY environment variable.
-    // We do this to determine how well deprecations are going before removing a command.
-    const { logEventAsync } =
-      require('../src/utils/analytics/rudderstackClient') as typeof import('../src/utils/analytics/rudderstackClient');
-    logEventAsync('action', {
-      action: `expo ${command}`,
-      source: 'expo/cli',
-      source_version: process.env.__EXPO_VERSION,
-    });
+    const { recordCommand } =
+      require('../src/utils/telemetry') as typeof import('../src/utils/telemetry');
+    recordCommand(command);
   }
 });

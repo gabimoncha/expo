@@ -5,8 +5,8 @@
 #import <functional>
 
 #import <jsi/jsi.h>
-#import <ReactCommon/RCTTurboModule.h>
-#import <ReactCommon/TurboModuleUtils.h>
+#import <React/React-Core-umbrella.h>
+#import <ReactCommon/ReactCommon-umbrella.h>
 #import <ExpoModulesCore/ObjectDeallocator.h>
 
 namespace jsi = facebook::jsi;
@@ -57,5 +57,10 @@ NS_SWIFT_NAME(JSIUtils)
 @interface EXJSIUtils : NSObject
 
 + (nonnull EXJavaScriptObject *)createNativeModuleObject:(nonnull EXJavaScriptRuntime *)runtime;
+
++ (void)emitEvent:(nonnull NSString *)eventName
+         toObject:(nonnull EXJavaScriptObject *)object
+    withArguments:(nonnull NSArray<id> *)arguments
+        inRuntime:(nonnull EXJavaScriptRuntime *)runtime;
 
 @end

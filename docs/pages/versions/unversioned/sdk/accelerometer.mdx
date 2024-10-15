@@ -22,7 +22,7 @@ import { SnackInline } from '~/ui/components/Snippet';
 <SnackInline label="Basic Accelerometer usage" dependencies={['expo-sensors']}>
 
 ```jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 
@@ -72,7 +72,6 @@ export default function App() {
   );
 }
 
-/* @hide const styles = StyleSheet.create({ ... }); */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -100,7 +99,6 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
 });
-/* @end */
 ```
 
 </SnackInline>

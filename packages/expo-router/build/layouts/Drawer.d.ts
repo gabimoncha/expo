@@ -5,20 +5,20 @@ export declare const Drawer: import("react").ForwardRefExoticComponent<Omit<Omit
     id?: string | undefined;
     children: import("react").ReactNode;
     screenListeners?: Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }> | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
         navigation: any;
     }) => Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }>) | undefined;
     screenOptions?: DrawerNavigationOptions | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
@@ -32,20 +32,20 @@ export declare const Drawer: import("react").ForwardRefExoticComponent<Omit<Omit
     id?: string | undefined;
     children: import("react").ReactNode;
     screenListeners?: Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }> | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
         navigation: any;
     }) => Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }>) | undefined;
     screenOptions?: DrawerNavigationOptions | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
@@ -55,20 +55,20 @@ export declare const Drawer: import("react").ForwardRefExoticComponent<Omit<Omit
     id?: string | undefined;
     children: import("react").ReactNode;
     screenListeners?: Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }> | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
         navigation: any;
     }) => Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }>) | undefined;
     screenOptions?: DrawerNavigationOptions | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
@@ -82,27 +82,27 @@ export declare const Drawer: import("react").ForwardRefExoticComponent<Omit<Omit
     id?: string | undefined;
     children: import("react").ReactNode;
     screenListeners?: Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }> | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
         navigation: any;
     }) => Partial<{
-        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "drawerItemPress">;
-        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "focus">;
-        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "blur">;
-        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "state">;
-        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap, "beforeRemove">;
+        drawerItemPress: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "drawerItemPress">;
+        focus: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "focus">;
+        blur: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "blur">;
+        state: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "state">;
+        beforeRemove: import("@react-navigation/native").EventListenerCallback<DrawerNavigationEventMap & import("@react-navigation/native").EventMapCore<DrawerNavigationState<ParamListBase>>, "beforeRemove">;
     }>) | undefined;
     screenOptions?: DrawerNavigationOptions | ((props: {
         route: import("@react-navigation/native").RouteProp<ParamListBase, string>;
         navigation: any;
     }) => DrawerNavigationOptions) | undefined;
 }, "children">> & import("react").RefAttributes<unknown>> & {
-    Screen: (props: import("../useScreens").ScreenProps<DrawerNavigationOptions, DrawerNavigationState<ParamListBase>, DrawerNavigationEventMap>) => null;
+    Screen: (props: import("..").ScreenProps<DrawerNavigationOptions, DrawerNavigationState<ParamListBase>, DrawerNavigationEventMap>) => null;
 };
 export default Drawer;
 //# sourceMappingURL=Drawer.d.ts.map

@@ -4,24 +4,192 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
+
+- Add `shutterSound` key to `CameraPictureOptions`, allowing users to disable the camera shutter sound when invoking `takePictureAsync`. ([#31038](https://github.com/expo/expo/pull/31038)) by [@yuna5566](https://github.com/yuna5566)
+
+### 🐛 Bug fixes
+
+- Add missing `react` and `react-native` peer dependencies for isolated modules. ([#30462](https://github.com/expo/expo/pull/30462) by [@byCedric](https://github.com/byCedric))
+- Only import from `expo/config-plugins` to follow proper dependency chains. ([#30499](https://github.com/expo/expo/pull/30499) by [@byCedric](https://github.com/byCedric))
+- Add missing `react-native-web` optional peer dependency for isolated modules. ([#30689](https://github.com/expo/expo/pull/30689) by [@byCedric](https://github.com/byCedric))
+- Fixed issue regarding using the "back"-facing on mobile web browswer. ([#30811](https://github.com/expo/expo/pull/30811) by [@entiendoNull](https://github.com/entiendoNull))
+- Fix `takePictureAsync` `quality` option when set to 0. ([#31587](https://github.com/expo/expo/pull/31587) by [@davidavz](https://github.com/davidavz))
+
+### 💡 Others
+
+- Removed redundant usage of `EventEmitter` instance. ([#28946](https://github.com/expo/expo/pull/28946) by [@tsapeta](https://github.com/tsapeta))
+- Updated docs for the `pictureSize` prop. ([#30195](https://github.com/expo/expo/pull/30195) by [@alanjhughes](https://github.com/alanjhughes))
+- [Android] Migrated cameraview AAR to autolinking and removed related config-plugin about adding the maven repository. ([#30707](https://github.com/expo/expo/pull/30707) by [@kudo](https://github.com/kudo))
+- Remove the dependency on the legacy types from the newer package on web. ([#30952](https://github.com/expo/expo/pull/30952) by [@alanjhughes](https://github.com/alanjhughes))
+- Remove `preferredVideoStabilizationMode` until is is fully supported. ([#31514](https://github.com/expo/expo/pull/31514) by [@alanjhughes](https://github.com/alanjhughes))
+- [iOS] Migrate to Swift concurrency. ([#31900](https://github.com/expo/expo/pull/31900) by [@alanjhughes](https://github.com/alanjhughes))
+
+### ⚠️ Notices
+
+- Added support for React Native 0.75.x. ([#30034](https://github.com/expo/expo/pull/30034) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 15.0.16 - 2024-09-13
+
+_This version does not introduce any user-facing changes._
+
+## 15.0.15 - 2024-08-24
+
+### 🎉 New features
+
+- On `Android`, add support for setting the aspect ratio of the camera. ([#29822](https://github.com/expo/expo/pull/29822) by [@alanjhughes](https://github.com/alanjhughes))
+- Support mirroring the output of the front facing camera. ([#30430](https://github.com/expo/expo/pull/30430) by [@alanjhughes](https://github.com/alanjhughes))
+- On `Android`, support mirroring video when using front facing camera. Control mirroring with a prop. Deprecate `mirror` option on `takePictureAsync` and `recordAsync`. ([#30548](https://github.com/expo/expo/pull/30548) by [@alanjhughes](https://github.com/alanjhughes))
+- Support pausing and resuming the preview. ([#30666](https://github.com/expo/expo/pull/30666) by [@alanjhughes](https://github.com/alanjhughes))
+- Add `active` prop to stop and start the camera session. Useful with navigation where the camera is can still be active on a previous screen. ([#30802](https://github.com/expo/expo/pull/30802) by [@alanjhughes](https://github.com/alanjhughes))
+
+### 🐛 Bug fixes
+
+- On `iOS`, correctly stop the session when the `CameraView` is removed. ([#30580](https://github.com/expo/expo/pull/30580) by [@alanjhughes](https://github.com/alanjhughes))
+- Fix rendering order of child views. ([#30759](https://github.com/expo/expo/pull/30759) by [@alanjhughes](https://github.com/alanjhughes))
+- Set the previews `scaleType` when the aspect ratio is set. ([#30831](https://github.com/expo/expo/pull/30831) by [@alanjhughes](https://github.com/alanjhughes))
+- On Android, fix selecting `pictureSize`. ([#31093](https://github.com/expo/expo/pull/31093) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.14 - 2024-07-16
+
+_This version does not introduce any user-facing changes._
+
+## 15.0.13 - 2024-07-03
+
+### 🐛 Bug fixes
+
+- On `iOS`, fix calling `takePicture` from the simulator. ([#30103](https://github.com/expo/expo/pull/30103) by [@alanjhughes](https://github.com/alanjhughes))
+- On `iOS`, fix touch interactions when using gesture handler. ([#30338](https://github.com/expo/expo/pull/30338) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.12 - 2024-06-20
+
+### 🐛 Bug fixes
+
+- Prevent shutter sound when device volume is muted. ([#29638](https://github.com/expo/expo/pull/29638) by [@frederikocmr](https://github.com/frederikocmr))
+- On `Android`, correct image orientation when `exif` is set to true in `takePictureAsync`. ([#29712](https://github.com/expo/expo/pull/29712) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.11 - 2024-06-13
+
+### 🐛 Bug fixes
+
+- Fix return type of scanFromURLAsync. ([#29547](https://github.com/expo/expo/pull/29547) by [@janicduplessis](https://github.com/janicduplessis))
+- On `web`, fix missing function "getCapabilities" in Firefox. ([#28947](https://github.com/expo/expo/pull/28947) by [@miso-belica](https://github.com/miso-belica))
+- Allow starting the camera with the torch enabled. ([#29217](https://github.com/expo/expo/pull/29217) by [@alanjhughes](https://github.com/alanjhughes))
+- On `iOS`, return the correct orientation in the exif data. ([#29681](https://github.com/expo/expo/pull/29681) by [@alanjhughes](https://github.com/alanjhughes))
+
+### 💡 Others
+
+- Make the returned `type` in `BarCodeScanningResult` consistent. ([#29421](https://github.com/expo/expo/pull/29421)) by [@alanjhughes](https://github.com/alanjhughes)) ([#29421](https://github.com/expo/expo/pull/29421) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.10 — 2024-05-29
+
+### 🐛 Bug fixes
+
+- On `iOS`, set previewLayer on scanner to get correct dimensions. ([#28931](https://github.com/expo/expo/pull/28931) by [@alanjhughes](https://github.com/alanjhughes))
+- On `Android`, correctly handle orientation when landscape pictures are rendered. ([#28929](https://github.com/expo/expo/pull/28929) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.9 — 2024-05-16
+
+### 🐛 Bug fixes
+
+- On `iOS`, prevent a crash when rendering the view on a simulator. ([#28911](https://github.com/expo/expo/pull/28911) by [@alanjhughes](https://github.com/alanjhughes))
+- On `iOS`, fix incorrect orientation when taking pictures in landscape. ([#28917](https://github.com/expo/expo/pull/28917) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.8 — 2024-05-13
+
+### 🐛 Bug fixes
+
+- On `iOS`, fix dead frames when switching from picture to video. ([#28783](https://github.com/expo/expo/pull/28783) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.7 — 2024-05-13
+
+### 💡 Others
+
+- Remove unused property `interval` from `BarcodeSettings`. ([#28760](https://github.com/expo/expo/pull/28760) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.6 — 2024-05-10
+
+### 🐛 Bug fixes
+
+- Fix documention for `maxDuration` in `CameraRecordingOptions`. ([#28749](https://github.com/expo/expo/pull/28749) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.5 — 2024-05-09
+
+### 🐛 Bug fixes
+
+- On `iOS`, fix `ean13` barcodes not returning data. ([#28674](https://github.com/expo/expo/pull/28674) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.4 — 2024-05-07
+
+### 🎉 New features
+
+- Add `autoFocus` prop to allow setting the device focus mode. ([#28650](https://github.com/expo/expo/pull/28650) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.3 — 2024-04-29
+
+### 🎉 New features
+
+- Support scanning barcodes from a provided image URL. ([#28445](https://github.com/expo/expo/pull/28445) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.2 — 2024-04-24
+
+### 🐛 Bug fixes
+
+- On `iOS`, fixed regression where recording a video captures dark frames. Reduced frequency of camera initialization. ([#28427](https://github.com/expo/expo/pull/28427) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 15.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 15.0.0 — 2024-04-18
+
+### 🎉 New features
+
+- Add ability to disable permissions in config plugin by passing `false` instead of permission messages. ([#28107](https://github.com/expo/expo/pull/28107) by [@EvanBacon](https://github.com/EvanBacon))
+- Add `pictureSize` prop to `CameraView` component. ([#27664](https://github.com/expo/expo/pull/27664) by [@alanjhughes](https://github.com/alanjhughes))
+- Allow user to remove `NSMicrophoneUsageDescription` and ignore the `mute` prop if they don't intend to use video. ([#28156](https://github.com/expo/expo/pull/28156) by [@alanjhughes](https://github.com/alanjhughes))
+- Add `animateShutter` prop to provide feedback when a picture is taken. Also added shutter sound on android. ([#28211](https://github.com/expo/expo/pull/28211) by [@alanjhughes](https://github.com/alanjhughes))
+
+### 🐛 Bug fixes
+
+- Allow users using xcode 14 to still build when including camera. ([#27873](https://github.com/expo/expo/pull/27873) by [@alanjhughes](https://github.com/alanjhughes))
+- Fix an issue where the permission functions were being imported from the wrong file. ([#27988](https://github.com/expo/expo/pull/27988) by [@alanjhughes](https://github.com/alanjhughes))
+- Fix an issue on `iOS` where the barcode types did not match the typescript representation. Also enabled scanning `upc_a` codes on `iOS`. ([#28233](https://github.com/expo/expo/pull/28233) by [@alanjhughes](https://github.com/alanjhughes))
+
+### 💡 Others
+
+- drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- On `Android`, requesting audio permissions was meant to be optional in the config plugin. ([#27365](https://github.com/expo/expo/pull/27365) by [@alanjhughes](https://github.com/alanjhughes))
+- Prevent unnecessary configuration changes wherever possible. ([#27919](https://github.com/expo/expo/pull/27919) by [@alanjhughes](https://github.com/alanjhughes))
+- On `Android`, only recreate camera after certain props have changed. ([#27952](https://github.com/expo/expo/pull/27952) by [@alanjhughes](https://github.com/alanjhughes))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
+- Promote `next` package to stable. ([#28226](https://github.com/expo/expo/pull/28226) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 14.1.1 - 2024-03-13
+
+_This version does not introduce any user-facing changes._
+
+## 14.1.0 - 2024-03-13
 
 ### 🐛 Bug fixes
 
 - On `Android`, fix empty qualities being passed to QualitySelector ([#27126](https://github.com/expo/expo/pull/27126) by [@leonhh](https://github.com/leonhh))
 - On `web`, prevent creating a webworker when rendering on the server ([#27222](https://github.com/expo/expo/pull/27222) by [@marklawlor](https://github.com/marklawlor))
 - On `iOS`, fix method call on an optional variable. ([#27235](https://github.com/expo/expo/pull/27235) by [@alanjhughes](https://github.com/alanjhughes))
-- On `iOS`, fix the orientation value in `onResponsiveOrientationChanged` when `exif` is set to true. ([#27314](https://github.com/expo/expo/pull/27314) by [@alanjhughes](https://github.com/alanjhughes))
 - Fix scanned frame bounds when scanning a barcode. ([#27207](https://github.com/expo/expo/pull/27207) by [@tamagokun](https://github.com/tamagokun))
 - Fix incorrect prop name `flash` being passed to native. ([#27394](https://github.com/expo/expo/pull/27394) by [@alanjhughes](https://github.com/alanjhughes))
 - Ensure `mute` prop is passed to native so it is correctly initialiased even when not provided from JS. ([#27546](https://github.com/expo/expo/pull/27546) by [@alanjhughes](https://github.com/alanjhughes))
 - On `iOS`, fix camera orientation on initial render. ([#27545](https://github.com/expo/expo/pull/27545) by [@alanjhughes](https://github.com/alanjhughes))
 - On `iOS`, fix an issue where the configuration can be interuppted when the dev menu is presented on intial launch. ([#27572](https://github.com/expo/expo/pull/27572) by [@alanjhughes](https://github.com/alanjhughes))
+- On `iOS`, fix `getAvailablePictureSizes` in the legacy package. ([#27642](https://github.com/expo/expo/pull/27642) by [@alanjhughes](https://github.com/alanjhughes))
 
-### 💡 Others
+## 14.0.6 - 2024-03-07
 
-- drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
-- On `Android`, requesting audio permissions was meant to be optional in the config plugin. ([#27365](https://github.com/expo/expo/pull/27365) by [@alanjhughes](https://github.com/alanjhughes))
+### 🐛 Bug fixes
+
+- On `iOS`, fix the orientation value in `onResponsiveOrientationChanged` when `exif` is set to true. ([#27314](https://github.com/expo/expo/pull/27314) by [@alanjhughes](https://github.com/alanjhughes))
 
 ## 14.0.5 - 2024-02-16
 

@@ -1,6 +1,6 @@
 import { UnavailabilityError } from 'expo-modules-core';
-import { CameraType, PermissionStatus, } from './Camera.types';
-import { canGetUserMedia, isBackCameraAvailableAsync, isFrontCameraAvailableAsync, } from './WebUserMediaManager';
+import { PermissionStatus, } from './Camera.types';
+import { canGetUserMedia, isBackCameraAvailableAsync, isFrontCameraAvailableAsync, } from './web/WebUserMediaManager';
 function getUserMedia(constraints) {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         return navigator.mediaDevices.getUserMedia(constraints);
@@ -158,8 +158,8 @@ export default {
             return [];
         const devices = await navigator.mediaDevices.enumerateDevices();
         const types = await Promise.all([
-            (await isFrontCameraAvailableAsync(devices)) && CameraType.front,
-            (await isBackCameraAvailableAsync()) && CameraType.back,
+            (await isFrontCameraAvailableAsync(devices)) && 'front',
+            (await isBackCameraAvailableAsync()) && 'back',
         ]);
         return types.filter(Boolean);
     },

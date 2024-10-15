@@ -4,13 +4,32 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
+
+- Jump directly to source. ([#29244](https://github.com/expo/expo/pull/29244) by [@EvanBacon](https://github.com/EvanBacon))
 
 ### 🐛 Bug fixes
 
 ### 💡 Others
 
+- Align web implementation exports as native to support DOM components when using `@expo/dom-webview`. ([#31662](https://github.com/expo/expo/pull/31662) by [@kudo](https://github.com/kudo))
+
+## 13.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.0 — 2024-04-18
+
+### 🎉 New features
+
+- Introduce `rigid` and `soft` impact types ([#28169](https://github.com/expo/expo/pull/28169) by [@rodperottoni](https://github.com/rodperottoni))
+
+### 💡 Others
+
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 12.8.1 - 2023-12-19
 

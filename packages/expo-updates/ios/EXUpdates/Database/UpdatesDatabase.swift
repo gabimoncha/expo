@@ -10,7 +10,11 @@
 // swiftlint:disable file_length
 
 import Foundation
+#if canImport(sqlite3)
 import sqlite3
+#else
+import SQLite3
+#endif
 import EXManifests
 
 internal enum UpdatesDatabaseError: Error {
@@ -401,6 +405,12 @@ public final class UpdatesDatabase: NSObject {
     }
   }
 
+  public func recentUpdateIdsWithFailedLaunch() throws -> [UUID] {
+    let sql = "SELECT id FROM updates WHERE failed_launch_count > 0 ORDER BY commit_time DESC LIMIT 5;"
+    let rows = try execute(sql: sql, withArgs: nil)
+    return rows.map { row in row.requiredValue(forKey: "id") }
+  }
+
   public func launchableUpdates(withConfig config: UpdatesConfig) throws -> [Update] {
     // if an update has successfully launched at least once, we treat it as launchable
     // even if it has also failed to launch at least once
@@ -546,7 +556,9 @@ public final class UpdatesDatabase: NSObject {
 
       // ensure that this can be serialized to a structured-header dictionary
       // this will throw for invalid values
-      _ = try StringStringDictionarySerializer.serialize(dictionary: extraParamsToWrite)
+      _ = try StringDictionary(value: extraParamsToWrite.mapValues({ value in
+        try StringItem(value: value)
+      }))
 
       _ = try setJsonData(extraParamsToWrite, withKey: UpdatesDatabase.ExtraParmasKey, scopeKey: scopeKey, isInTransaction: true)
     } catch {

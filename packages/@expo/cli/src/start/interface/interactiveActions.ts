@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { BLT, printHelp, printItem, printQRCode, printUsage, StartOptions } from './commandsTable';
 import * as Log from '../../log';
 import { delayAsync } from '../../utils/delay';
+import { env } from '../../utils/env';
 import { learnMore } from '../../utils/link';
 import { openBrowserAsync } from '../../utils/open';
 import { ExpoChoice, selectAsync } from '../../utils/prompts';
@@ -12,9 +13,9 @@ import {
   startReactDevToolsProxyAsync,
 } from '../server/ReactDevToolsProxy';
 import {
-  MetroInspectorProxyApp,
   openJsInspector,
   queryAllInspectorAppsAsync,
+  promptInspectorAppAsync,
 } from '../server/middleware/inspector/JsInspector';
 
 const debug = require('debug')('expo:start:interface:interactiveActions') as typeof console.log;
@@ -49,6 +50,14 @@ export class DevServerManagerActions {
             )
           );
         }
+
+        if (env.__EXPO_E2E_TEST) {
+          // Print the URL to stdout for tests
+          console.info(
+            `[__EXPO_E2E_TEST:server] ${JSON.stringify({ url: devServer.getDevServerUrl() })}`
+          );
+        }
+
         Log.log(printItem(chalk`Metro waiting on {underline ${nativeRuntimeUrl}}`));
         if (options.devClient === false) {
           // TODO: if development build, change this message!
@@ -91,44 +100,32 @@ export class DevServerManagerActions {
   }
 
   async openJsInspectorAsync() {
-    const metroServerOrigin = this.devServerManager.getDefaultDevServer().getJsInspectorBaseUrl();
-    const apps = await queryAllInspectorAppsAsync(metroServerOrigin);
-    let app: MetroInspectorProxyApp | null = null;
-
-    if (!apps.length) {
-      return Log.warn(
-        chalk`{bold Debug:} No compatible apps connected. JavaScript Debugging can only be used with the Hermes engine. ${learnMore(
-          'https://docs.expo.dev/guides/using-hermes/'
-        )}`
-      );
-    }
-
-    if (apps.length === 1) {
-      app = apps[0];
-    } else {
-      const choices = apps.map((app) => ({
-        title: app.deviceName ?? 'Unknown device',
-        value: app.id,
-        app,
-      }));
-
-      const value = await selectAsync(chalk`Debug target {dim (Hermes only)}`, choices);
-      const menuItem = choices.find((item) => item.value === value);
-      if (!menuItem) {
-        return Log.error(chalk`{bold Debug:} No device available for "${value}"`);
+    try {
+      const metroServerOrigin = this.devServerManager.getDefaultDevServer().getJsInspectorBaseUrl();
+      const apps = await queryAllInspectorAppsAsync(metroServerOrigin);
+      if (!apps.length) {
+        return Log.warn(
+          chalk`{bold Debug:} No compatible apps connected, React Native DevTools can only be used with Hermes. ${learnMore(
+            'https://docs.expo.dev/guides/using-hermes/'
+          )}`
+        );
       }
 
-      app = menuItem.app;
-    }
+      const app = await promptInspectorAppAsync(apps);
+      if (!app) {
+        return Log.error(chalk`{bold Debug:} No inspectable device selected`);
+      }
 
-    if (!app) {
-      return Log.error(chalk`{bold Debug:} No device selected`);
-    }
-
-    try {
-      await openJsInspector(metroServerOrigin, app);
+      if (!(await openJsInspector(metroServerOrigin, app))) {
+        Log.warn(
+          chalk`{bold Debug:} Failed to open the React Native DevTools, see debug logs for more info.`
+        );
+      }
     } catch (error: any) {
-      Log.error('Failed to open JavaScript inspector. This is often an issue with Google Chrome.');
+      // Handle aborting prompt
+      if (error.code === 'ABORTED') return;
+
+      Log.error('Failed to open the React Native DevTools.');
       Log.exception(error);
     }
   }
@@ -157,7 +154,7 @@ export class DevServerManagerActions {
       const pluginMenuItems = (
         await this.devServerManager.devtoolsPluginManager.queryPluginsAsync()
       ).map((plugin) => ({
-        title: chalk`Open devtools plugin - {bold ${plugin.packageName}}`,
+        title: chalk`Open {bold ${plugin.packageName}}`,
         value: `devtoolsPlugin:${plugin.packageName}`,
         action: async () => {
           const url = new URL(

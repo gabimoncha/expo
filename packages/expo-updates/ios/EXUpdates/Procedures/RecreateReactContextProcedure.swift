@@ -1,5 +1,6 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
+import React
 import ExpoModulesCore
 
 final class RecreateReactContextProcedure: StateMachineProcedure {
@@ -24,7 +25,7 @@ final class RecreateReactContextProcedure: StateMachineProcedure {
   func run(procedureContext: ProcedureContext) {
     procedureContext.processStateEvent(UpdatesStateEventRestart())
 
-    DispatchQueue(label: "expo.procedure.RecreateReactContextProcedureQueue").async {
+    DispatchQueue.main.async {
       RCTTriggerReloadCommandListeners(self.triggerReloadCommandListenersReason)
       self.successBlock()
       // Reset the state machine

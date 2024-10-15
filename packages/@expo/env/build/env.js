@@ -49,8 +49,8 @@ function path() {
   return data;
 }
 function _getRequireWildcardCache(e) { if ("function" != typeof WeakMap) return null; var r = new WeakMap(), t = new WeakMap(); return (_getRequireWildcardCache = function (e) { return e ? t : r; })(e); }
-function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && Object.prototype.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireWildcard(e, r) { if (!r && e && e.__esModule) return e; if (null === e || "object" != typeof e && "function" != typeof e) return { default: e }; var t = _getRequireWildcardCache(r); if (t && t.has(e)) return t.get(e); var n = { __proto__: null }, a = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var u in e) if ("default" !== u && {}.hasOwnProperty.call(e, u)) { var i = a ? Object.getOwnPropertyDescriptor(e, u) : null; i && (i.get || i.set) ? Object.defineProperty(n, u, i) : n[u] = e[u]; } return n.default = e, t && t.set(e, n), n; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 /**
  * Copyright © 2023 650 Industries.
  *
@@ -137,19 +137,20 @@ function createControlledEnvironment() {
   function _expandEnv(parsedEnv) {
     const expandedEnv = {};
 
-    // When not ignoring `process.env`, values from the parsed env are overwritten by the current env if defined.
-    // We handle this ourselves, expansion should always use the current state of "current + parsed env".
+    // Pass a clone of `process.env` to avoid mutating the original environment.
+    // When the expansion is done, we only store the environment variables that were initially parsed from `parsedEnv`.
     const allExpandedEnv = (0, _dotenvExpand().expand)({
-      parsed: {
-        ...process.env,
-        ...parsedEnv
-      },
-      ignoreProcessEnv: true
+      parsed: parsedEnv,
+      processEnv: {
+        ...process.env
+      }
     });
     if (allExpandedEnv.error) {
       console.error(`Failed to expand environment variables, using non-expanded environment variables: ${allExpandedEnv.error}`);
       return parsedEnv;
     }
+
+    // Only store the values that were initially parsed, from `parsedEnv`.
     for (const key of Object.keys(parsedEnv)) {
       if (allExpandedEnv.parsed?.[key]) {
         expandedEnv[key] = allExpandedEnv.parsed[key];

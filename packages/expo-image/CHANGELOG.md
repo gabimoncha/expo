@@ -4,18 +4,142 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840), [#30871](https://github.com/expo/expo/pull/30871) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
-- On `iOS`, support loading assets in the native project. This already worked on android. ([#27251](https://github.com/expo/expo/pull/27251) by [@alanjhughes](https://github.com/alanjhughes))
+- Added `Image.loadAsync` API. ([#25079](https://github.com/expo/expo/pull/25079) by [@tsapeta](https://github.com/tsapeta), [#26824](https://github.com/expo/expo/pull/26824) by [@aleqsio](https://github.com/aleqsio), [#31575](https://github.com/expo/expo/pull/31575) by [@tsapeta](https://github.com/tsapeta))
+- Add basic React Server Component support. ([#29869](https://github.com/expo/expo/pull/29869) by [@EvanBacon](https://github.com/EvanBacon))
+- [iOS] Added support for rendering shared image refs. ([#30661](https://github.com/expo/expo/pull/30661) by [@tsapeta](https://github.com/tsapeta))
+- [Android] Added support for rendering shared image refs. ([#31098](https://github.com/expo/expo/pull/31098) by [@lukmccall](https://github.com/lukmccall))
+- [Android] Added support for rendering shared refs of `Bitmap's`. ([#31440](https://github.com/expo/expo/pull/31440) by [@lukmccall](https://github.com/lukmccall))
+- Added `useImage` hook. ([#31171](https://github.com/expo/expo/pull/31171) by [@tsapeta](https://github.com/tsapeta))
 
 ### 🐛 Bug fixes
 
-- Fixed an issue where `isBlurhashString` always returned `true` .([#27251](https://github.com/expo/expo/pull/27251) by [@alanjhughes](https://github.com/alanjhughes))
-- Fix #available check to account for tvOS. ([#27272](https://github.com/expo/expo/pull/27272) by [@alanjhughes](https://github.com/alanjhughes))
+- Fix props not being passed to parent container. ([#29416](https://github.com/expo/expo/pull/29416) by [@aleqsio](https://github.com/aleqsio))
+- Add missing `react` and `react-native` peer dependencies for isolated modules. ([#30469](https://github.com/expo/expo/pull/30469) by [@byCedric](https://github.com/byCedric))
+- Add missing `react-native-web` optional peer dependency for isolated modules. ([#30689](https://github.com/expo/expo/pull/30689) by [@byCedric](https://github.com/byCedric))
+- [Web] Fix type incompatibility between style prop and `@types/react-native-web` ([#31150](https://github.com/expo/expo/pull/31150) by [@adamhari](https://github.com/adamhari))
+- [iOS] Fixed `isAnimated` property always returning `true`. ([#31834](https://github.com/expo/expo/pull/31834) by [@tsapeta](https://github.com/tsapeta))
 
 ### 💡 Others
 
+- Use the `src` folder as the Metro target. ([#30665](https://github.com/expo/expo/pull/30665) by [@tsapeta](https://github.com/tsapeta))
+- Provide image's memory footprint for better garbage collection. ([#31168](https://github.com/expo/expo/pull/31168) by [@tsapeta](https://github.com/tsapeta) & [#31784](https://github.com/expo/expo/pull/31784) by [@lukmccall](https://github.com/lukmccall))
+
+### ⚠️ Notices
+
+- Added support for React Native 0.75.x. ([#30034](https://github.com/expo/expo/pull/30034) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+- Added support for React Native 0.76.x. ([#31552](https://github.com/expo/expo/pull/31552) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 1.13.0 - 2024-09-23
+
+### 🎉 New features
+
+- Added `onDisplay` event. ([#31581](https://github.com/expo/expo/pull/31581) by [@tsapeta](https://github.com/tsapeta))
+
+## 1.12.15 - 2024-08-24
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.13 - 2024-07-16
+
+### 🐛 Bug fixes
+
+- [Web] Fix blurhash not working and causing fetches to `blurhash:/` uri. ([#27587](https://github.com/expo/expo/pull/27587) by [@aleqsio](https://github.com/aleqsio))
+- [iOS] Fixed `blurRadius` not working. Also made the effect render more consistently across platforms. ([#29678](https://github.com/expo/expo/pull/29678) by [@vonovak](https://github.com/vonovak))
+- Fixed `tintColor` not working on Safari browsers. ([#29169](https://github.com/expo/expo/pull/29169) by [@bradleyayers](https://github.com/bradleyayers))
+- Fixed reanimated support on web. ([#29197](https://github.com/expo/expo/pull/29197) by [@nishan](https://github.com/intergalacticspacehighway)) ([#29197](https://github.com/expo/expo/pull/29197) by [@intergalacticspacehighway](https://github.com/intergalacticspacehighway))
+
+## 1.12.12 - 2024-06-13
+
+### 💡 Others
+
+- Removed @react-native/assets-registry dependency. ([#29541](https://github.com/expo/expo/pull/29541) by [@kudo](https://github.com/kudo))
+
+## 1.12.11 - 2024-06-06
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.10 - 2024-06-05
+
+### 💡 Others
+
+- Pin @react-native subpackage versions to 0.74.83. ([#29441](https://github.com/expo/expo/pull/29441) by [@kudo](https://github.com/kudo))
+
+## 1.12.9 — 2024-05-09
+
+### 💡 Others
+
+- Added setup for native unit tests. ([#28678](https://github.com/expo/expo/pull/28678) by [@tsapeta](https://github.com/tsapeta))
+
+## 1.12.8 — 2024-05-06
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.7 — 2024-05-04
+
+### 🎉 New features
+
+- Added support for displaying animated AVIF images on Android. ([#28609](https://github.com/expo/expo/pull/28609) by [@fobos531](https://github.com/fobos531))
+
+### 🐛 Bug fixes
+
+- Fix `avif` images not rendering. ([#28608](https://github.com/expo/expo/pull/28608) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 1.12.6 — 2024-05-02
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.5 — 2024-05-01
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.4 — 2024-04-24
+
+### 🐛 Bug fixes
+
+- Fixed an issue where certain images would not animate at certain sizes on `iOS`. ([#28335](https://github.com/expo/expo/pull/28335) by [@fobos531](https://github.com/fobos531))
+- Fixed SVG assets without viewbox attribute not being rendered on Android. ([#28369](https://github.com/expo/expo/pull/28369) by [@lukmccall](https://github.com/lukmccall))
+
+## 1.12.3 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.2 — 2024-04-22
+
+### 🐛 Bug fixes
+
+- Fixed an issue where certain images would not animate at certain sizes on `iOS`. ([#28335](https://github.com/expo/expo/pull/28335) by [@fobos531](https://github.com/fobos531), [#28371](https://github.com/expo/expo/pull/28371) by [@tsapeta](https://github.com/tsapeta))
+
+## 1.12.1 — 2024-04-19
+
+_This version does not introduce any user-facing changes._
+
+## 1.12.0 — 2024-04-18
+
+### 🎉 New features
+
+- On `iOS`, support loading assets in the native project. This already worked on android. ([#27251](https://github.com/expo/expo/pull/27251) by [@alanjhughes](https://github.com/alanjhughes))
+- Support prefetching images with HTTP headers. ([#28133](https://github.com/expo/expo/pull/28133) by [@toy0605](https://github.com/toy0605))
+
+### 🐛 Bug fixes
+
+- [iOS] Fixed an issue where data URIs caused crashes on iOS16+. ([#28320](https://github.com/expo/expo/pull/28320) by [@aleqsio](https://github.com/aleqsio))
+- Refactor web implementations of `useSourceSelection` to avoid unnecessary rerenders. ([#27569](https://github.com/expo/expo/pull/27569) by [@aleqsio](https://github.com/aleqsio))
+- Fixed an issue where `isBlurhashString` always returned `true` .([#27251](https://github.com/expo/expo/pull/27251) by [@alanjhughes](https://github.com/alanjhughes))
+- Fix #available check to account for tvOS. ([#27272](https://github.com/expo/expo/pull/27272) by [@alanjhughes](https://github.com/alanjhughes))
+- Fixed jest may cause `RangeError: Invalid string length` error when generating a snapshot. ([#27354](https://github.com/expo/expo/pull/27354) by [@lukmccall](https://github.com/lukmccall))
+- Fixed placeholders weren't correctly scaled down on the Android. ([#28255](https://github.com/expo/expo/pull/28255) by [@lukmccall](https://github.com/lukmccall))
+
+### 💡 Others
+
+- [iOS] Bump SDWebImage to `5.19.1` to include the 3rd-party privacy manifest. ([#27874](https://github.com/expo/expo/pull/27874) by [@aparedes](https://github.com/aparedes), []() by [@tsapeta](https://github.com/tsapeta))
 - Use `typeof window` checks for removing server code. ([#27514](https://github.com/expo/expo/pull/27514) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
+- [iOS] Bump SDWebImageWebPCoder to `0.14.6`. ([#28273](https://github.com/expo/expo/pull/28273) by [@alanjhughes](https://github.com/alanjhughes))
+- Automatically clean blurhash cache when the app's memory is running low. ([#28276](https://github.com/expo/expo/pull/28276) by [@lukmccall](https://github.com/lukmccall))
 
 ## 1.11.0 — 2024-02-05
 

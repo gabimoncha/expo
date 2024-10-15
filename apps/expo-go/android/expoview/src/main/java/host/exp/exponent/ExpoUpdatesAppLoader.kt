@@ -18,6 +18,7 @@ import expo.modules.manifests.core.Manifest
 import expo.modules.updates.codesigning.CODE_SIGNING_METADATA_ALGORITHM_KEY
 import expo.modules.updates.codesigning.CODE_SIGNING_METADATA_KEY_ID_KEY
 import expo.modules.updates.codesigning.CodeSigningAlgorithm
+import expo.modules.updates.logging.UpdatesLogger
 import expo.modules.updates.selectionpolicy.LoaderSelectionPolicyFilterAware
 import expo.modules.updates.selectionpolicy.ReaperSelectionPolicyDevelopmentClient
 import expo.modules.updates.selectionpolicy.SelectionPolicy
@@ -34,6 +35,8 @@ import org.json.JSONObject
 import java.io.File
 import java.util.*
 import javax.inject.Inject
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 private const val UPDATE_AVAILABLE_EVENT = "updateAvailable"
 private const val UPDATE_NO_UPDATE_AVAILABLE_EVENT = "noUpdateAvailable"
@@ -56,9 +59,6 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
   private val useCacheOnly: Boolean = false
 ) {
   @Inject
-  lateinit var exponentManifest: ExponentManifest
-
-  @Inject
   lateinit var exponentSharedPreferences: ExponentSharedPreferences
 
   @Inject
@@ -72,83 +72,81 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
     DOWNLOADING_NEW_UPDATE
   }
 
-  var isEmergencyLaunch = false
-    private set
   var isUpToDate = true
     private set
   var status: AppLoaderStatus? = null
-    private set
+    private set(value) {
+      field = value
+      callback.updateStatus(value)
+    }
+
   var shouldShowAppLoaderStatus = true
     private set
   private var isStarted = false
+  private var startupStartTimeMillis: Long? = null
+  private var startupEndTimeMillis: Long? = null
+  val launchDuration
+    get() = startupStartTimeMillis?.let { start ->
+      startupEndTimeMillis?.let { end ->
+        (end - start).toDuration(
+          DurationUnit.MILLISECONDS
+        )
+      }
+    }
 
   interface AppLoaderCallback {
     fun onOptimisticManifest(optimisticManifest: Manifest)
     fun onManifestCompleted(manifest: Manifest)
     fun onBundleCompleted(localBundlePath: String)
     fun emitEvent(params: JSONObject)
-    fun updateStatus(status: AppLoaderStatus)
+    fun updateStatus(status: AppLoaderStatus?)
     fun onError(e: Exception)
   }
 
   lateinit var updatesConfiguration: UpdatesConfiguration
     private set
 
-  lateinit var updatesDirectory: File
-    private set
-
-  lateinit var selectionPolicy: SelectionPolicy
-    private set
-
-  lateinit var fileDownloader: FileDownloader
-    private set
-
   lateinit var launcher: Launcher
     private set
-
-  private fun updateStatus(status: AppLoaderStatus) {
-    this.status = status
-    callback.updateStatus(status)
-  }
 
   fun start(context: Context) {
     check(!isStarted) { "AppLoader for $manifestUrl was started twice. AppLoader.start() may only be called once per instance." }
     isStarted = true
+    startupStartTimeMillis = System.currentTimeMillis()
     status = AppLoaderStatus.CHECKING_FOR_UPDATE
-    fileDownloader = FileDownloader(context)
     kernel.addAppLoaderForManifestUrl(manifestUrl, this)
-    val httpManifestUrl = exponentManifest.httpManifestUrl(manifestUrl)
-    val configMap = mutableMapOf<String, Any>()
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_UPDATE_URL_KEY] = httpManifestUrl
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_SCOPE_KEY_KEY] = httpManifestUrl.toString()
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_HAS_EMBEDDED_UPDATE_KEY] = false
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_ENABLED_KEY] = true
-    if (useCacheOnly) {
-      configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_CHECK_ON_LAUNCH_KEY] = "NEVER"
-      configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_LAUNCH_WAIT_MS_KEY] = 0
-    } else {
-      configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_CHECK_ON_LAUNCH_KEY] = "ALWAYS"
-      configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_LAUNCH_WAIT_MS_KEY] = 60000
-    }
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY] = requestHeaders
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_RUNTIME_VERSION_KEY] = "exposdk:${Constants.TEMPORARY_SDK_VERSION}"
-    // in Expo Go, embed the Expo Root Certificate and get the Expo Go intermediate certificate and development certificates from the multipart manifest response part
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_CERTIFICATE] = context.assets.open("expo-root.pem").readBytes().decodeToString()
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_METADATA] = mapOf(
-      CODE_SIGNING_METADATA_KEY_ID_KEY to "expo-root",
-      CODE_SIGNING_METADATA_ALGORITHM_KEY to CodeSigningAlgorithm.RSA_SHA256.algorithmName
-    )
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_INCLUDE_MANIFEST_RESPONSE_CERTIFICATE_CHAIN] = true
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_ALLOW_UNSIGNED_MANIFESTS] = true
-    // in Expo Go, ignore directives in manifest responses and require a manifest. the current directives (no update available, roll back) don't have any practical use outside of apps that use the library directly.
-    configMap[UpdatesConfiguration.UPDATES_CONFIGURATION_ENABLE_EXPO_UPDATES_PROTOCOL_V0_COMPATIBILITY_MODE] = true
+
+    val httpManifestUrl = ExponentManifest.httpManifestUrl(manifestUrl)
+
+    val configMap = mutableMapOf<String, Any>().apply {
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_UPDATE_URL_KEY] = httpManifestUrl
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_SCOPE_KEY_KEY] = httpManifestUrl.toString()
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_HAS_EMBEDDED_UPDATE_KEY] = false
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_ENABLED_KEY] = true
+      if (useCacheOnly) {
+        this[UpdatesConfiguration.UPDATES_CONFIGURATION_CHECK_ON_LAUNCH_KEY] = "NEVER"
+        this[UpdatesConfiguration.UPDATES_CONFIGURATION_LAUNCH_WAIT_MS_KEY] = 0
+      } else {
+        this[UpdatesConfiguration.UPDATES_CONFIGURATION_CHECK_ON_LAUNCH_KEY] = "ALWAYS"
+        this[UpdatesConfiguration.UPDATES_CONFIGURATION_LAUNCH_WAIT_MS_KEY] = 60000
+      }
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY] = requestHeaders
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_RUNTIME_VERSION_KEY] = "exposdk:${Constants.SDK_VERSION}"
+      // in Expo Go, embed the Expo Root Certificate and get the Expo Go intermediate certificate and development certificates from the multipart manifest response part
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_CERTIFICATE] = context.assets.open("expo-root.pem").readBytes().decodeToString()
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_METADATA] = mapOf(
+        CODE_SIGNING_METADATA_KEY_ID_KEY to "expo-root",
+        CODE_SIGNING_METADATA_ALGORITHM_KEY to CodeSigningAlgorithm.RSA_SHA256.algorithmName
+      )
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_INCLUDE_MANIFEST_RESPONSE_CERTIFICATE_CHAIN] = true
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_CODE_SIGNING_ALLOW_UNSIGNED_MANIFESTS] = true
+      // in Expo Go, ignore directives in manifest responses and require a manifest. the current directives (no update available, roll back) don't have any practical use outside of apps that use the library directly.
+      this[UpdatesConfiguration.UPDATES_CONFIGURATION_ENABLE_EXPO_UPDATES_PROTOCOL_V0_COMPATIBILITY_MODE] = true
+    }.toMap()
 
     val configuration = UpdatesConfiguration(null, configMap)
-    val sdkVersionsList = mutableListOf<String>().apply {
-      (Constants.SDK_VERSIONS_LIST + listOf(RNObject.UNVERSIONED)).forEach {
-        add(it)
-        add("exposdk:$it")
-      }
+    val sdkVersionsList = listOf(Constants.SDK_VERSION, RNObject.UNVERSIONED).flatMap {
+      listOf(it, "exposdk:$it")
     }
     val selectionPolicy = SelectionPolicy(
       ExpoGoLauncherSelectionPolicyFilterAware(sdkVersionsList),
@@ -161,30 +159,35 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
       callback.onError(e)
       return
     }
-    startLoaderTask(configuration, directory, selectionPolicy, context)
+    val logger = UpdatesLogger(context)
+    val fileDownloader = FileDownloader(context, configuration, logger)
+    startLoaderTask(configuration, fileDownloader, directory, selectionPolicy, context, logger)
   }
 
   private fun startLoaderTask(
     configuration: UpdatesConfiguration,
+    fileDownloader: FileDownloader,
     directory: File,
     selectionPolicy: SelectionPolicy,
-    context: Context
+    context: Context,
+    logger: UpdatesLogger
   ) {
     updatesConfiguration = configuration
-    updatesDirectory = directory
-    this.selectionPolicy = selectionPolicy
     LoaderTask(
+      context,
       configuration,
       databaseHolder,
       directory,
       fileDownloader,
       selectionPolicy,
+      logger,
       object : LoaderTaskCallback {
         private var didAbort = false
         override fun onFailure(e: Exception) {
           if (didAbort) {
             return
           }
+          this@ExpoUpdatesAppLoader.startupEndTimeMillis = System.currentTimeMillis()
           var exception = e
           try {
             val errorJson = JSONObject(e.message!!)
@@ -231,13 +234,14 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
           }
           setShouldShowAppLoaderStatus(update.manifest)
           callback.onOptimisticManifest(update.manifest)
-          updateStatus(AppLoaderStatus.DOWNLOADING_NEW_UPDATE)
+          status = AppLoaderStatus.DOWNLOADING_NEW_UPDATE
         }
 
         override fun onSuccess(launcher: Launcher, isUpToDate: Boolean) {
           if (didAbort) {
             return
           }
+          this@ExpoUpdatesAppLoader.startupEndTimeMillis = System.currentTimeMillis()
           this@ExpoUpdatesAppLoader.launcher = launcher
           this@ExpoUpdatesAppLoader.isUpToDate = isUpToDate
           try {
@@ -289,22 +293,7 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
           }
         }
       }
-    ).start(context)
-  }
-
-  @Throws(JSONException::class)
-  private fun processManifestJson(manifestJson: JSONObject): JSONObject {
-    // if the manifest is scoped to a random anonymous scope key, automatically verify it
-    if (exponentManifest.isAnonymousExperience(Manifest.fromManifestJson(manifestJson))) {
-      manifestJson.put(ExponentManifest.MANIFEST_IS_VERIFIED_KEY, true)
-    }
-
-    // otherwise set verified to false
-    if (!manifestJson.has(ExponentManifest.MANIFEST_IS_VERIFIED_KEY)) {
-      manifestJson.put(ExponentManifest.MANIFEST_IS_VERIFIED_KEY, false)
-    }
-
-    return manifestJson
+    ).start()
   }
 
   private fun setShouldShowAppLoaderStatus(manifest: Manifest) {
@@ -337,13 +326,10 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
       if (KernelConfig.FORCE_UNVERSIONED_PUBLISHED_EXPERIENCES) {
         headers["Exponent-SDK-Version"] = "UNVERSIONED"
       } else {
-        headers["Exponent-SDK-Version"] = Constants.SDK_VERSIONS
+        headers["Exponent-SDK-Version"] = Constants.SDK_VERSION
       }
       return headers
     }
-
-  private val isRunningOnEmulator: Boolean
-    get() = EmulatorUtilities.isRunningOnEmulator()
 
   private val clientEnvironment: String
     get() = if (EmulatorUtilities.isRunningOnEmulator()) {
@@ -359,10 +345,8 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
     if (RNObject.UNVERSIONED == sdkVersion) {
       return true
     }
-    for (version in Constants.SDK_VERSIONS_LIST) {
-      if (version == sdkVersion) {
-        return true
-      }
+    if (Constants.SDK_VERSION == sdkVersion) {
+      return true
     }
     return false
   }
@@ -373,7 +357,7 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
       errorJson.put("message", "Invalid SDK version")
       if (sdkVersion == null) {
         errorJson.put("errorCode", "NO_SDK_VERSION_SPECIFIED")
-      } else if (ABIVersion.toNumber(sdkVersion) > ABIVersion.toNumber(Constants.SDK_VERSIONS_LIST[0])) {
+      } else if (ABIVersion.toNumber(sdkVersion) > ABIVersion.toNumber(Constants.SDK_VERSION)) {
         errorJson.put("errorCode", "EXPERIENCE_SDK_VERSION_TOO_NEW")
       } else {
         errorJson.put("errorCode", "EXPERIENCE_SDK_VERSION_OUTDATED")
@@ -394,6 +378,21 @@ class ExpoUpdatesAppLoader @JvmOverloads constructor(
   companion object {
     private val TAG = ExpoUpdatesAppLoader::class.java.simpleName
     const val UPDATES_EVENT_NAME = "Expo.nativeUpdatesEvent"
+
+    @Throws(JSONException::class)
+    private fun processManifestJson(manifestJson: JSONObject): JSONObject {
+      // if the manifest is scoped to a random anonymous scope key, automatically verify it
+      if (ExponentManifest.isAnonymousExperience(Manifest.fromManifestJson(manifestJson))) {
+        manifestJson.put(ExponentManifest.MANIFEST_IS_VERIFIED_KEY, true)
+      }
+
+      // otherwise set verified to false
+      if (!manifestJson.has(ExponentManifest.MANIFEST_IS_VERIFIED_KEY)) {
+        manifestJson.put(ExponentManifest.MANIFEST_IS_VERIFIED_KEY, false)
+      }
+
+      return manifestJson
+    }
   }
 
   init {

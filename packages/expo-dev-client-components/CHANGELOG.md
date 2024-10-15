@@ -8,7 +8,15 @@
 
 ### 🐛 Bug fixes
 
+- Add missing `react`/`react-native` peer dependencies. ([#30573](https://github.com/expo/expo/pull/30573) by [@byCedric](https://github.com/byCedric))
+
 ### 💡 Others
+
+- Standardized Babel configuration to use `expo-module-scripts`. ([#31915](https://github.com/expo/expo/pull/31915) by [@reichhartd](https://github.com/reichhartd))
+
+## 1.8.1 — 2024-04-29
+
+_This version does not introduce any user-facing changes._
 
 ## 1.8.0 — 2023-12-12
 

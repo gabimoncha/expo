@@ -4,13 +4,30 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
 ### 💡 Others
 
+## 12.0.2 - 2024-06-13
+
+### 🐛 Bug fixes
+
+- [iOS] Fix `video/*` MIME Type not allowing to select videos with audio. ([#29673](https://github.com/expo/expo/pull/29673) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 12.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.0 — 2024-04-18
+
+### 💡 Others
+
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 11.10.1 - 2023-12-19
 

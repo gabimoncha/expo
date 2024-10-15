@@ -2,13 +2,12 @@ package expo.modules.devlauncher.launcher.loaders
 
 import android.content.Context
 import android.content.Intent
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.facebook.react.ReactActivity
-import com.facebook.react.ReactInstanceManager
-import com.facebook.react.ReactNativeHost
+import com.facebook.react.ReactInstanceEventListener
 import com.facebook.react.bridge.ReactContext
+import expo.interfaces.devmenu.ReactHostWrapper
 import expo.modules.devlauncher.launcher.DevLauncherControllerInterface
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -34,7 +33,7 @@ import kotlin.coroutines.suspendCoroutine
  * - `onReactContext` - is called after the `ReactContext` was loaded.
  */
 abstract class DevLauncherAppLoader(
-  private val appHost: ReactNativeHost,
+  private val appHost: ReactHostWrapper,
   private val context: Context,
   private val controller: DevLauncherControllerInterface
 ) {
@@ -45,8 +44,8 @@ abstract class DevLauncherAppLoader(
     return { activity ->
       onDelegateWillBeCreated(activity)
 
-      require(appHost.reactInstanceManager.currentReactContext == null) { "App react context shouldn't be created before." }
-      appHost.reactInstanceManager.addReactInstanceEventListener(object : ReactInstanceManager.ReactInstanceEventListener {
+      require(appHost.currentReactContext == null) { "App react context shouldn't be created before." }
+      appHost.addReactInstanceEventListener(object : ReactInstanceEventListener {
         override fun onReactContextInitialized(context: ReactContext) {
           if (reactContextWasInitialized) {
             return
@@ -54,16 +53,15 @@ abstract class DevLauncherAppLoader(
 
           controller.onAppLoaded(context)
           onReactContext(context)
-          appHost.reactInstanceManager.removeReactInstanceEventListener(this)
+          appHost.removeReactInstanceEventListener(this)
           reactContextWasInitialized = true
           continuation!!.resume(true)
         }
       })
 
-      activity.lifecycle.addObserver(object : LifecycleObserver {
-        @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-        fun onCreate() {
-          onCreate(activity)
+      activity.lifecycle.addObserver(object : DefaultLifecycleObserver {
+        override fun onCreate(owner: LifecycleOwner) {
+          super.onCreate(owner)
           activity.lifecycle.removeObserver(this)
         }
       })

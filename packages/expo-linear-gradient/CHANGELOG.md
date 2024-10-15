@@ -2,17 +2,42 @@
 
 ## Unpublished
 
-- Added support for Paint dithering on Android. ([#27153](https://github.com/expo/expo/pull/27153) by [@alexandrius](https://github.com/alexandrius))
-
 ### 🛠 Breaking changes
+
+- stricter TS type of the `colors` prop. It now requires providing an array of least two values. Passing an empty array or an array with one value will fail to typecheck. ([#27820](https://github.com/expo/expo/pull/27820) by [@navignaw](https://github.com/navignaw))
+- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
+### 🎉 New features
+
+- Add experimental support for React Server Components. ([#29404](https://github.com/expo/expo/pull/29404) by [@EvanBacon](https://github.com/EvanBacon))
+
+### 🐛 Bug fixes
+
+- Add missing `react` and `react-native` peer dependencies for isolated modules. ([#30471](https://github.com/expo/expo/pull/30471) by [@byCedric](https://github.com/byCedric))
+
+### 💡 Others
+
+## 13.0.2 — 2024-05-01
+
+### 💡 Others
+
+- Changed type of `colors` and `locations` array to readonly ([#28450](https://github.com/expo/expo/pull/28450) by [@kowczarz](https://github.com/kowczarz))
+
+## 13.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.0 — 2024-04-18
+
+- Added support for Paint dithering on Android. ([#27153](https://github.com/expo/expo/pull/27153) by [@alexandrius](https://github.com/alexandrius))
 
 ### 🎉 New features
 
 - Mark React client components with "use client" directives. ([#27300](https://github.com/expo/expo/pull/27300) by [@EvanBacon](https://github.com/EvanBacon))
 
-### 🐛 Bug fixes
-
 ### 💡 Others
+
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 12.7.2 - 2024-02-16
 

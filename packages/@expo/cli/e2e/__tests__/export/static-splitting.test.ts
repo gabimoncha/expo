@@ -22,6 +22,7 @@ describe('exports static with bundle splitting', () => {
 
   beforeAll(
     async () => {
+      // NODE_ENV=production EXPO_USE_STATIC=static E2E_ROUTER_SRC=static-rendering E2E_ROUTER_ASYNC=production EXPO_USE_FAST_RESOLVER=1 npx expo export -p web --source-maps --output-dir dist-static-splitting
       await execa(
         'node',
         [bin, 'export', '-p', 'web', '--source-maps', '--output-dir', outputName],
@@ -32,8 +33,7 @@ describe('exports static with bundle splitting', () => {
             EXPO_USE_STATIC: 'static',
             E2E_ROUTER_SRC: 'static-rendering',
             E2E_ROUTER_ASYNC: 'production',
-            // TODO: Reenable this after investigating unstable_getRealPath
-            EXPO_USE_FAST_RESOLVER: 'false',
+            EXPO_USE_FAST_RESOLVER: 'true',
           },
         }
       );
@@ -85,9 +85,7 @@ describe('exports static with bundle splitting', () => {
   it('has eager script tags in dynamic html', async () => {
     const staticParamsPage = await getScriptTagsAsync('welcome-to-the-universe.html');
 
-    expect(staticParamsPage).toEqual(
-      ['index', '[post]', '_layout'].map(expectChunkPathMatching)
-    );
+    expect(staticParamsPage).toEqual(['index', '[post]', '_layout'].map(expectChunkPathMatching));
 
     expect(await getScriptTagsAsync('[post].html')).toEqual(staticParamsPage);
   });
@@ -123,9 +121,8 @@ describe('exports static with bundle splitting', () => {
     // "_expo/static/js/web/links-4545c832242c66b83e4bd38b67066808.js.map",
     // "_expo/static/js/web/styled-93437b3b1dcaa498dabb3a1de3aae7ac.js.map",
     expect(mapFiles).toEqual(
-      ['\\[post\\]', '_layout', 'about', 'asset', 'index', 'index', 'links', 'styled'].map(
-        (file) =>
-          expect.stringMatching(new RegExp(`_expo\\/static\\/js\\/web\\/${file}-.*\\.js\\.map`))
+      ['\\[post\\]', '_layout', 'about', 'asset', 'index', 'index', 'links', 'styled'].map((file) =>
+        expect.stringMatching(new RegExp(`_expo\\/static\\/js\\/web\\/${file}-.*\\.js\\.map`))
       )
     );
 
@@ -177,7 +174,9 @@ describe('exports static with bundle splitting', () => {
     // non-public env vars are injected during SSG
     expect(queryMeta('expo-e2e-private-env-var-client')).toEqual('not-public-value');
 
-    const script = indexHtml.querySelectorAll('script')[0];
+    const script = indexHtml
+      .querySelectorAll('script')
+      .filter((script) => !!script.attributes.src)[0];
     const jsBundle = fs.readFileSync(path.join(outputDir, script.attributes.src), 'utf8');
 
     // Ensure the bundle is valid
@@ -254,18 +253,18 @@ describe('exports static with bundle splitting', () => {
   });
 
   it('statically extracts fonts', async () => {
-    // <style id="expo-generated-fonts" type="text/css">@font-face{font-family:sweet;src:url(/assets/__e2e__/static-rendering/sweet.ttf?platform=web&hash=7c9263d3cffcda46ff7a4d9c00472c07);font-display:auto}</style><link rel="preload" href="/assets/__e2e__/static-rendering/sweet.ttf?platform=web&hash=7c9263d3cffcda46ff7a4d9c00472c07" as="font" crossorigin="" />
+    // <style id="expo-generated-fonts" type="text/css">@font-face{font-family:sweet;src:url(/assets/__e2e__/static-rendering/sweet.ttf);font-display:auto}</style><link rel="preload" href="/assets/__e2e__/static-rendering/sweet.ttf?platform=web&hash=7c9263d3cffcda46ff7a4d9c00472c07" as="font" crossorigin="" />
     // Unfortunately, the CSS is injected in every page for now since we don't have bundle splitting.
     const indexHtml = await getPageHtml(outputDir, 'index.html');
 
     const links = indexHtml.querySelectorAll('html > head > link[as="font"]');
     expect(links.length).toBe(1);
     expect(links[0].attributes.href).toBe(
-      '/assets/__e2e__/static-rendering/sweet.7c9263d3cffcda46ff7a4d9c00472c07.ttf?platform=web&hash=7c9263d3cffcda46ff7a4d9c00472c07'
+      '/assets/__e2e__/static-rendering/sweet.7c9263d3cffcda46ff7a4d9c00472c07.ttf'
     );
 
     expect(links[0].toString()).toMatch(
-      /<link rel="preload" href="\/assets\/__e2e__\/static-rendering\/sweet\.[a-zA-Z0-9]{32}\.ttf\?platform=web&hash=[a-zA-Z0-9]{32}" as="font" crossorigin="" >/
+      /<link rel="preload" href="\/assets\/__e2e__\/static-rendering\/sweet\.[a-zA-Z0-9]{32}\.ttf" as="font" crossorigin="" >/
     );
 
     expect(

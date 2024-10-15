@@ -4,12 +4,46 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
+- Added support for Babel config files other than `babel.config.js` when upgrading plain React Native project. ([#30356](https://github.com/expo/expo/pull/30356) by [@wojtekmaj](https://github.com/wojtekmaj))
+
 ### 🐛 Bug fixes
-- Fixed vulnerability with update semver from 7.5.3 to 7.5.4. ([#26876](https://github.com/expo/expo/pull/26876) by [@GaelCO](https://github.com/GaelCO))
+
+- [iOS] Fixed "Unsupported Swift Version" when running `install-expo-modules` on a RNC CLI project. ([#30414](https://github.com/expo/expo/pull/30414) by [@vonovak](https://github.com/vonovak))
+- Fixed crash when `babel.config.js` was not found when upgrading plain React Native project. ([#30356](https://github.com/expo/expo/pull/30356) by [@wojtekmaj](https://github.com/wojtekmaj))
 
 ### 💡 Others
+
+- Update `commander` dependency. ([#29603](https://github.com/expo/expo/pull/29603) by [@Simek](https://github.com/Simek))
+- Update `glob@7` to `glob@10`. ([#29933](https://github.com/expo/expo/pull/29933) by [@byCedric](https://github.com/byCedric))
+- Fixed the `missing required argument 'project-directory'` error when executing without specifying a project directory. ([#32054](https://github.com/expo/expo/pull/32054) by [@kudo](https://github.com/kudo))
+
+## 0.10.2 - 2024-06-28
+
+_This version does not introduce any user-facing changes._
+
+## 0.10.1 - 2024-05-29
+
+_This version does not introduce any user-facing changes._
+
+## 0.10.0 — 2024-04-25
+
+### 🎉 New features
+
+- Added Expo SDK 51 and React Native 0.74 support. ([#28444](https://github.com/expo/expo/pull/28444) by [@kudo](https://github.com/kudo))
+
+## 0.9.1 — 2024-04-24
+
+_This version does not introduce any user-facing changes._
+
+## 0.9.0 — 2024-04-18
+
+### 🐛 Bug fixes
+
+- Fixed vulnerability with update semver from 7.5.3 to 7.5.4. ([#26876](https://github.com/expo/expo/pull/26876) by [@GaelCO](https://github.com/GaelCO))
 
 ## 0.8.1 - 2024-01-10
 

@@ -4,13 +4,34 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
+- Add missing `react-native` peer dependencies for isolated modules. ([#30484](https://github.com/expo/expo/pull/30484) by [@byCedric](https://github.com/byCedric))
+
+### 💡 Others
+
+- Added availability-check and migration for SkStoreReviewController on iOS. (by [@chrfalch](https://github.com/chrfalch)) ([#31341](https://github.com/expo/expo/pull/31341) by [@chrfalch](https://github.com/chrfalch))
+
+## 7.0.2 — 2024-05-02
+
+### 🐛 Bug fixes
+
+- fixes incorrect scene when multiple windowscenes opened, while requesting a review. ([#28577](https://github.com/expo/expo/pull/28577) by [@dylancom](https://github.com/dylancom))
+
+## 7.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 7.0.0 — 2024-04-18
+
 ### 💡 Others
 
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 6.8.3 - 2024-01-18
 

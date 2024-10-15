@@ -4,13 +4,35 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
+- [Web] Fix `onDone` not firing listeners. ([#28904](https://github.com/expo/expo/pull/28904) by [@aleqsio](https://github.com/aleqsio))
+
+### 💡 Others
+
+- [Web] Change module registration. ([#29870](https://github.com/expo/expo/pull/29870) by [@aleqsio](https://github.com/aleqsio))
+
+## 12.0.2 — 2024-05-09
+
+### 🐛 Bug fixes
+
+- [Web] Fix crash on `listenerCount` accessor. ([#28721](https://github.com/expo/expo/pull/28721) by [@aleqsio](https://github.com/aleqsio))
+
+## 12.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.0 — 2024-04-18
+
 ### 💡 Others
 
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
+- Removed the usage of the legacy EventEmitter. ([#28195](https://github.com/expo/expo/pull/28195) by [@tsapeta](https://github.com/tsapeta))
 
 ## 11.7.0 — 2023-11-14
 

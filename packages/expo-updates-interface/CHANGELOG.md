@@ -4,13 +4,36 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
+- Use expo-updates as source of truth for runtime version in dev client ([#31453](https://github.com/expo/expo/pull/31453) by [@wschurman](https://github.com/wschurman))
+
+### 💡 Others
+
+- Refactor context injection ([#31951](https://github.com/expo/expo/pull/31951) by [@wschurman](https://github.com/wschurman))
+
+## 0.16.2 — 2024-05-09
+
+### 🐛 Bug fixes
+
+- Fixed loading error when both `expo-dev-client` and `expo-updates` installed but no `runtimeVersion` configured. ([#28662](https://github.com/expo/expo/pull/28662) by [@kudo](https://github.com/kudo))
+
+## 0.16.1 — 2024-04-29
+
+_This version does not introduce any user-facing changes._
+
+## 0.16.0 — 2024-04-18
+
 ### 💡 Others
 
 - Decouple from "bridge" in `expo-updates`. ([#27216](https://github.com/expo/expo/pull/27216) by [@kudo](https://github.com/kudo))
+- Migrated expo-updates-interface to Kotlin. ([#28033](https://github.com/expo/expo/pull/28033) by [@kudo](https://github.com/kudo))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
+- Aligned `UpdatesControllerRegistry` with iOS for a better expo-updates and expo-dev-launcher interoperability. ([#27996](https://github.com/expo/expo/pull/27996) by [@kudo](https://github.com/kudo))
 
 ## 0.15.3 - 2024-01-18
 

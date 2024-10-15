@@ -7,6 +7,7 @@ import { checkPackagesAsync } from './checkPackages';
 import { installExpoPackageAsync } from './installExpoPackage';
 import { Options } from './resolveOptions';
 import * as Log from '../log';
+import { checkPackagesCompatibility } from './utils/checkPackagesCompatibility';
 import { getVersionedPackagesAsync } from '../start/doctor/dependencies/getVersionedPackages';
 import { CommandError } from '../utils/errors';
 import { findUpProjectRootOrAssert } from '../utils/findUp';
@@ -31,7 +32,7 @@ export async function installAsync(
   setNodeEnv('development');
   // Locate the project root based on the process current working directory.
   // This enables users to run `npx expo install` from a subdirectory of the project.
-  const projectRoot = options.projectRoot ?? findUpProjectRootOrAssert(process.cwd());
+  const projectRoot = options?.projectRoot ?? findUpProjectRootOrAssert(process.cwd());
   require('@expo/env').load(projectRoot);
 
   // Resolve the package manager used by the project, or based on the provided arguments.
@@ -65,6 +66,11 @@ export async function installAsync(
     });
   }
 
+  // note(simek): check out the packages compatibility with New Architecture against RND API
+  if (!process.env.EXPO_NO_NEW_ARCH_COMPAT_CHECK) {
+    await checkPackagesCompatibility(otherPackages);
+  }
+
   // Read the project Expo config without plugins.
   const { exp } = getConfig(projectRoot, {
     // Sometimes users will add a plugin to the config before installing the library,
@@ -92,6 +98,7 @@ export async function installPackagesAsync(
     packageManagerArguments,
     fix,
     check,
+    dev,
   }: Options & {
     /**
      * List of packages to version, grouped by the type of dependency.
@@ -148,7 +155,7 @@ export async function installPackagesAsync(
         )} because ${
           alreadyExcluded.length > 1 ? 'they are' : 'it is'
         } listed in {bold expo.install.exclude} in package.json. ${learnMore(
-          'https://expo.dev/more/expo-cli/#configuring-dependency-validation'
+          'https://docs.expo.dev/more/expo-cli/#configuring-dependency-validation'
         )}`
       );
     }
@@ -163,7 +170,7 @@ export async function installPackagesAsync(
         )} because ${
           specifiedExactVersion.length > 1 ? 'these versions' : 'this version'
         } was explicitly provided. Packages excluded from dependency validation should be listed in {bold expo.install.exclude} in package.json. ${learnMore(
-          'https://expo.dev/more/expo-cli/#configuring-dependency-validation'
+          'https://docs.expo.dev/more/expo-cli/#configuring-dependency-validation'
         )}`
       );
     }
@@ -187,7 +194,11 @@ export async function installPackagesAsync(
     });
   }
 
-  await packageManager.addAsync([...packageManagerArguments, ...versioning.packages]);
+  if (dev) {
+    await packageManager.addDevAsync([...packageManagerArguments, ...versioning.packages]);
+  } else {
+    await packageManager.addAsync([...packageManagerArguments, ...versioning.packages]);
+  }
 
   await applyPluginsAsync(projectRoot, versioning.packages);
 }

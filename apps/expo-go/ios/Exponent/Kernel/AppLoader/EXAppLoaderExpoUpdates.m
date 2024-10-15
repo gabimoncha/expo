@@ -51,7 +51,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) EXUpdatesConfig *config;
 @property (nonatomic, nullable) EXUpdatesSelectionPolicy *selectionPolicy;
 @property (nonatomic, nullable) id<EXUpdatesAppLauncher> appLauncher;
-@property (nonatomic, assign) BOOL isEmergencyLaunch;
+
+@property (nonatomic, nullable) NSDate *startupStartTime;
+@property (nonatomic, nullable) NSDate *startupEndTime;
 
 @end
 
@@ -77,7 +79,6 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize config = _config;
 @synthesize selectionPolicy = _selectionPolicy;
 @synthesize appLauncher = _appLauncher;
-@synthesize isEmergencyLaunch = _isEmergencyLaunch;
 @synthesize isUpToDate = _isUpToDate;
 
 - (instancetype)initWithManifestUrl:(NSURL *)url
@@ -102,11 +103,12 @@ NS_ASSUME_NONNULL_BEGIN
   _appLauncher = nil;
   _error = nil;
   _shouldUseCacheOnly = NO;
-  _isEmergencyLaunch = NO;
   _remoteUpdateStatus = kEXAppLoaderRemoteUpdateStatusChecking;
   _shouldShowRemoteUpdateStatus = YES;
   _isUpToDate = NO;
   _isLoadingDevelopmentJavaScriptResource = NO;
+  _startupStartTime = nil;
+  _startupEndTime = nil;
 }
 
 - (EXAppLoaderStatus)status
@@ -185,6 +187,15 @@ NS_ASSUME_NONNULL_BEGIN
   }
 }
 
+- (nullable NSNumber *)launchDuration
+{
+  if (!_startupStartTime || !_startupEndTime) {
+    return nil;
+  }
+
+  return @([_startupEndTime timeIntervalSinceDate:_startupStartTime] * 1000);
+}
+
 #pragma mark - EXUpdatesAppLoaderTaskDelegate
 
 - (BOOL)appLoaderTask:(EXUpdatesAppLoaderTask *)appLoaderTask didLoadCachedUpdate:(EXUpdatesUpdate *)update
@@ -226,6 +237,8 @@ NS_ASSUME_NONNULL_BEGIN
     return;
   }
 
+  _startupEndTime = [NSDate now];
+
   if (!_optimisticManifest) {
     EXManifestsManifest *processedManifest = [self _processManifest:launcher.launchedUpdate.manifest];
     if (processedManifest == nil) {
@@ -253,6 +266,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
   if (!_error) {
     _error = error;
+    _startupEndTime = [NSDate now];
 
     // if the error payload conforms to the error protocol, we can parse it and display
     // a slightly nicer error message to the user
@@ -315,6 +329,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)_beginRequest
 {
+  _startupStartTime = [NSDate now];
   if (![self _initializeDatabase]) {
     return;
   }
@@ -343,7 +358,7 @@ NS_ASSUME_NONNULL_BEGIN
     EXUpdatesConfig.EXUpdatesConfigLaunchWaitMsKey: launchWaitMs,
     EXUpdatesConfig.EXUpdatesConfigCheckOnLaunchKey: shouldCheckOnLaunch ? EXUpdatesConfig.EXUpdatesConfigCheckOnLaunchValueAlways : EXUpdatesConfig.EXUpdatesConfigCheckOnLaunchValueNever,
     EXUpdatesConfig.EXUpdatesConfigRequestHeadersKey: [self _requestHeaders],
-    EXUpdatesConfig.EXUpdatesConfigRuntimeVersionKey: [NSString stringWithFormat:@"exposdk:%@", [EXVersions sharedInstance].temporarySdkVersion],
+    EXUpdatesConfig.EXUpdatesConfigRuntimeVersionKey: [NSString stringWithFormat:@"exposdk:%@", [EXVersions sharedInstance].sdkVersion],
   }];
 
   // in Expo Go, embed the Expo Root Certificate and get the Expo Go intermediate certificate and development certificates
@@ -389,16 +404,12 @@ NS_ASSUME_NONNULL_BEGIN
 
   EXUpdatesDatabaseManager *updatesDatabaseManager = [EXKernel sharedInstance].serviceRegistry.updatesDatabaseManager;
 
-  NSMutableArray *sdkVersions = [[EXVersions sharedInstance].versions[@"sdkVersions"] ?: @[[EXVersions sharedInstance].temporarySdkVersion] mutableCopy];
-  [sdkVersions addObject:@"UNVERSIONED"];
-
-  NSMutableArray *sdkVersionRuntimeVersions = [[NSMutableArray alloc] initWithCapacity:sdkVersions.count];
-  for (NSString *sdkVersion in sdkVersions) {
-    [sdkVersionRuntimeVersions addObject:[NSString stringWithFormat:@"exposdk:%@", sdkVersion]];
-  }
-  [sdkVersionRuntimeVersions addObject:@"exposdk:UNVERSIONED"];
-  [sdkVersions addObjectsFromArray:sdkVersionRuntimeVersions];
-
+  NSArray *sdkVersions = @[
+    [EXVersions sharedInstance].sdkVersion,
+    [NSString stringWithFormat:@"exposdk:%@", [EXVersions sharedInstance].sdkVersion],
+    @"UNVERSIONED",
+    @"exposdk:UNVERSIONED"
+  ];
   _selectionPolicy = [[EXUpdatesSelectionPolicy alloc]
                       initWithLauncherSelectionPolicy:[[EXExpoGoLauncherSelectionPolicyFilterAware alloc] initWithSdkVersions:sdkVersions]
                       loaderSelectionPolicy:[EXUpdatesLoaderSelectionPolicyFilterAware new]
@@ -578,12 +589,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSString *)_sdkVersions
 {
-  NSArray *versionsAvailable = [EXVersions sharedInstance].versions[@"sdkVersions"];
-  if (versionsAvailable) {
-    return [versionsAvailable componentsJoinedByString:@","];
-  } else {
-    return [EXVersions sharedInstance].temporarySdkVersion;
-  }
+  return [EXVersions sharedInstance].sdkVersion;
 }
 
 @end

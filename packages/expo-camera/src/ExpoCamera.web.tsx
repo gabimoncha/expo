@@ -1,19 +1,27 @@
 import { CodedError } from 'expo-modules-core';
-import * as React from 'react';
+import {
+  type PropsWithChildren,
+  forwardRef,
+  useRef,
+  useMemo,
+  useImperativeHandle,
+  type ComponentProps,
+  type Ref,
+} from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import createElement from 'react-native-web/dist/exports/createElement';
 
 import {
-  CameraCapturedPicture,
   CameraNativeProps,
+  CameraCapturedPicture,
   CameraPictureOptions,
   CameraType,
 } from './Camera.types';
 import CameraManager from './ExpoCameraManager.web';
-import { capture } from './WebCameraUtils';
-import { PictureSizes } from './WebConstants';
-import { useWebCameraStream } from './useWebCameraStream';
-import { useWebQRScanner } from './useWebQRScanner';
+import { capture } from './web/WebCameraUtils';
+import { PictureSizes } from './web/WebConstants';
+import { useWebCameraStream } from './web/useWebCameraStream';
+import { useWebQRScanner } from './web/useWebQRScanner';
 
 export interface ExponentCameraRef {
   getAvailablePictureSizes: (ratio: string) => Promise<string[]>;
@@ -22,14 +30,14 @@ export interface ExponentCameraRef {
   pausePreview: () => Promise<void>;
 }
 
-const ExponentCamera = React.forwardRef(
+const ExponentCamera = forwardRef(
   (
-    { type, pictureSize, poster, ...props }: CameraNativeProps & { children?: React.ReactNode },
-    ref: React.Ref<ExponentCameraRef>
+    { facing, poster, ...props }: PropsWithChildren<CameraNativeProps>,
+    ref: Ref<ExponentCameraRef>
   ) => {
-    const video = React.useRef<HTMLVideoElement | null>(null);
+    const video = useRef<HTMLVideoElement | null>(null);
 
-    const native = useWebCameraStream(video, type as CameraType, props, {
+    const native = useWebCameraStream(video, facing as CameraType, props, {
       onCameraReady() {
         if (props.onCameraReady) {
           props.onCameraReady();
@@ -38,30 +46,27 @@ const ExponentCamera = React.forwardRef(
       onMountError: props.onMountError,
     });
 
-    const isQRScannerEnabled = React.useMemo<boolean>(() => {
-      return !!(
-        props.barCodeScannerSettings?.barCodeTypes?.includes('qr') && !!props.onBarCodeScanned
+    const isQRScannerEnabled = useMemo<boolean>(() => {
+      return Boolean(
+        props.barcodeScannerSettings?.barcodeTypes?.includes('qr') && !!props.onBarcodeScanned
       );
-    }, [props.barCodeScannerSettings?.barCodeTypes, props.onBarCodeScanned]);
+    }, [props.barcodeScannerSettings?.barcodeTypes, props.onBarcodeScanned]);
 
     useWebQRScanner(video, {
-      interval: props.barCodeScannerSettings?.interval,
+      interval: 300,
       isEnabled: isQRScannerEnabled,
-      captureOptions: { scale: 1, isImageMirror: native.type === CameraType.front },
+      captureOptions: { scale: 1, isImageMirror: native.type === 'front' },
       onScanned(event) {
-        if (props.onBarCodeScanned) {
-          props.onBarCodeScanned(event);
+        if (props.onBarcodeScanned) {
+          props.onBarcodeScanned(event);
         }
       },
-      // onError: props.onMountError,
     });
 
-    // const [pause, setPaused]
-
-    React.useImperativeHandle(
+    useImperativeHandle(
       ref,
       () => ({
-        async getAvailablePictureSizes(ratio: string): Promise<string[]> {
+        async getAvailablePictureSizes(): Promise<string[]> {
           return PictureSizes;
         },
         async takePicture(options: CameraPictureOptions): Promise<CameraCapturedPicture> {
@@ -107,27 +112,26 @@ const ExponentCamera = React.forwardRef(
     // Because we don't support recording video in the browser we don't need the user to give microphone permissions.
     const isMuted = true;
 
-    const style = React.useMemo<StyleProp<ViewStyle>>(() => {
+    const style = useMemo<StyleProp<ViewStyle>>(() => {
       const isFrontFacingCamera = native.type === CameraManager.Type.front;
       return [
         StyleSheet.absoluteFill,
         styles.video,
         {
-          pointerEvents: props.pointerEvents,
           // Flip the camera
           transform: isFrontFacingCamera ? [{ scaleX: -1 }] : undefined,
         },
       ];
-    }, [props.pointerEvents, native.type]);
+    }, [native.type]);
 
     return (
-      <View style={[styles.videoWrapper, props.style]}>
+      <View pointerEvents="box-none" style={[styles.videoWrapper, props.style]}>
         <Video
           autoPlay
           playsInline
           muted={isMuted}
           poster={poster}
-          // webkitPlaysinline
+          pointerEvents={props.pointerEvents}
           ref={video}
           style={style}
         />
@@ -139,15 +143,15 @@ const ExponentCamera = React.forwardRef(
 
 export default ExponentCamera;
 
-const Video = React.forwardRef(
+const Video = forwardRef(
   (
-    props: React.ComponentProps<typeof View> & {
+    props: ComponentProps<typeof View> & {
       autoPlay?: boolean;
       playsInline?: boolean;
       muted?: boolean;
       poster?: string;
     },
-    ref: React.Ref<HTMLVideoElement>
+    ref: Ref<HTMLVideoElement>
   ) => createElement('video', { ...props, ref })
 );
 
@@ -155,7 +159,6 @@ const styles = StyleSheet.create({
   videoWrapper: {
     flex: 1,
     alignItems: 'stretch',
-    pointerEvents: 'box-none',
   },
   video: {
     width: '100%',

@@ -6,7 +6,9 @@ import { mockSpawnPromise } from '../../__tests__/spawn-utils';
 import { BunPackageManager } from '../BunPackageManager';
 
 jest.mock('@expo/spawn-async');
-jest.mock('fs');
+// Jest doesn't mock `node:fs` when mocking `fs`
+jest.mock('fs', () => require('memfs').fs);
+jest.mock('node:fs', () => require('memfs').fs);
 
 beforeAll(() => {
   // Disable logging to clean up test ouput
@@ -45,6 +47,19 @@ describe('BunPackageManager', () => {
         expect.objectContaining({
           env: { ADBLOCK: '0', DISABLE_OPENCOLLECTIVE: '1' },
         })
+      );
+    });
+  });
+
+  describe('runBinAsync', () => {
+    it('executes bun with the expected command and options', async () => {
+      const bun = new BunPackageManager({ cwd: projectRoot });
+      await bun.runBinAsync(['eslint', '.']);
+
+      expect(spawnAsync).toHaveBeenCalledWith(
+        'bun',
+        expect.arrayContaining(['eslint', '.']),
+        expect.objectContaining({ cwd: projectRoot })
       );
     });
   });

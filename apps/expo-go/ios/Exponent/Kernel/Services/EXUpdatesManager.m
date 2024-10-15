@@ -73,6 +73,11 @@ ofDownloadWithManifest:(EXManifestsManifest * _Nullable)manifest
   return [self _appLoaderWithScopeKey:scopeKey].appLauncher.launchedUpdate;
 }
 
+- (nullable NSNumber *)launchDurationForScopeKey:(NSString *)scopeKey
+{
+  return [self _appLoaderWithScopeKey:scopeKey].launchDuration;
+}
+
 - (nullable NSDictionary *)assetFilesMapForScopeKey:(NSString *)scopeKey
 {
   return [self _appLoaderWithScopeKey:scopeKey].appLauncher.assetFilesMap;
@@ -86,11 +91,6 @@ ofDownloadWithManifest:(EXManifestsManifest * _Nullable)manifest
 - (BOOL)isStartedForScopeKey:(NSString *)scopeKey
 {
   return [self _appLoaderWithScopeKey:scopeKey].appLauncher != nil;
-}
-
-- (BOOL)isEmergencyLaunchForScopeKey:(NSString *)scopeKey
-{
-  return [self _appLoaderWithScopeKey:scopeKey].isEmergencyLaunch;
 }
 
 - (void)requestRelaunchForScopeKey:(NSString *)scopeKey withCompletion:(EXUpdatesAppRelaunchCompletionBlock)completion

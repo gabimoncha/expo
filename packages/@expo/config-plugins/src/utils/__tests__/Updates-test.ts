@@ -14,6 +14,7 @@ import {
   getUpdatesRequestHeadersStringified,
   getUpdatesEnabled,
   getUpdatesTimeout,
+  getUpdatesUseEmbeddedUpdate,
   getUpdateUrl,
   FINGERPRINT_RUNTIME_VERSION_SENTINEL,
 } from '../Updates';
@@ -179,6 +180,20 @@ describe(getNativeVersion, () => {
   });
 });
 
+describe(getUpdatesUseEmbeddedUpdate, () => {
+  it('returns true if updates.useEmbeddedUpdate is true', () => {
+    expect(getUpdatesUseEmbeddedUpdate({ updates: { useEmbeddedUpdate: true } })).toBe(true);
+  });
+
+  it('returns false if updates.useEmbeddedUpdate is false', () => {
+    expect(getUpdatesUseEmbeddedUpdate({ updates: { useEmbeddedUpdate: false } })).toBe(false);
+  });
+
+  it('returns true if updates.useEmbeddedUpdate is undefined', () => {
+    expect(getUpdatesUseEmbeddedUpdate({ updates: {} })).toBe(true);
+  });
+});
+
 describe(getRuntimeVersionAsync, () => {
   it('works if the top level runtimeVersion is a string', async () => {
     const runtimeVersion = '42';
@@ -216,13 +231,9 @@ describe(getRuntimeVersionAsync, () => {
     ).toBe(version);
   });
 
-  it('works if the runtimeVersion is a fingerprintExperimental policy', async () => {
+  it('works if the runtimeVersion is a fingerprint policy', async () => {
     expect(
-      await getRuntimeVersionAsync(
-        '',
-        { runtimeVersion: { policy: 'fingerprintExperimental' } },
-        'ios'
-      )
+      await getRuntimeVersionAsync('', { runtimeVersion: { policy: 'fingerprint' } }, 'ios')
     ).toBe(FINGERPRINT_RUNTIME_VERSION_SENTINEL);
   });
 

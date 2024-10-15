@@ -19,6 +19,7 @@ exports.getUpdatesEnabled = getUpdatesEnabled;
 exports.getUpdatesRequestHeaders = getUpdatesRequestHeaders;
 exports.getUpdatesRequestHeadersStringified = getUpdatesRequestHeadersStringified;
 exports.getUpdatesTimeout = getUpdatesTimeout;
+exports.getUpdatesUseEmbeddedUpdate = getUpdatesUseEmbeddedUpdate;
 exports.resolveRuntimeVersionPolicyAsync = resolveRuntimeVersionPolicyAsync;
 function _sdkRuntimeVersions() {
   const data = require("@expo/sdk-runtime-versions");
@@ -69,7 +70,7 @@ function _() {
   };
   return data;
 }
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 const FINGERPRINT_RUNTIME_VERSION_SENTINEL = exports.FINGERPRINT_RUNTIME_VERSION_SENTINEL = 'file:fingerprint';
 function getExpoUpdatesPackageVersion(projectRoot) {
   const expoUpdatesPackageJsonPath = _resolveFrom().default.silent(projectRoot, 'expo-updates/package.json');
@@ -121,13 +122,12 @@ async function getRuntimeVersionAsync(projectRoot, config, platform) {
   }
   if (typeof runtimeVersion === 'string') {
     if (runtimeVersion === FINGERPRINT_RUNTIME_VERSION_SENTINEL) {
-      throw new Error(`${FINGERPRINT_RUNTIME_VERSION_SENTINEL} is a reserved value for runtime version. To use a fingerprint runtime version, use the "fingerprintExperimental" runtime version policy.`);
+      throw new Error(`${FINGERPRINT_RUNTIME_VERSION_SENTINEL} is a reserved value for runtime version. To use a fingerprint runtime version, use the "fingerprint" runtime version policy.`);
     }
     return runtimeVersion;
   } else if (!runtimeVersion.policy) {
     throw new Error(`"${runtimeVersion}" is not a valid runtime version. Only a string or a runtime version policy is supported.`);
-  } else if (runtimeVersion.policy === 'fingerprintExperimental') {
-    console.warn(`Use of the experimental '${runtimeVersion.policy}' runtime policy may result in unexpected system behavior.`);
+  } else if (runtimeVersion.policy === 'fingerprint') {
     return FINGERPRINT_RUNTIME_VERSION_SENTINEL;
   } else {
     return await resolveRuntimeVersionPolicyAsync(runtimeVersion.policy, config, platform);
@@ -144,7 +144,7 @@ async function resolveRuntimeVersionPolicyAsync(policy, config, platform) {
     }
     return (0, _sdkRuntimeVersions().getRuntimeVersionForSDKVersion)(config.sdkVersion);
   } else {
-    // fingerprintExperimental is resolvable only at build time (not in config plugin).
+    // fingerprint is resolvable only at build time (not in config plugin).
     throw new Error(`"${policy}" is not a valid runtime version policy type.`);
   }
 }
@@ -157,6 +157,12 @@ function getUpdatesEnabled(config) {
     return config.updates.enabled;
   }
   return getUpdateUrl(config) !== null;
+}
+function getUpdatesUseEmbeddedUpdate(config) {
+  if (config.updates?.useEmbeddedUpdate !== undefined) {
+    return config.updates.useEmbeddedUpdate;
+  }
+  return true;
 }
 function getUpdatesTimeout(config) {
   return config.updates?.fallbackToCacheTimeout ?? 0;

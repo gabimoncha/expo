@@ -2,10 +2,9 @@ require_relative './podfile_helpers.rb'
 require_relative '../../../react-native-lab/react-native/packages/react-native/scripts/react_native_pods'
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 
+platform :ios, '15.1'
 install! 'cocoapods',
-         :generate_multiple_pod_projects => true,
-         :incremental_installation => true
-platform :ios, '13.4'
+  :deterministic_uuids => false
 inhibit_all_warnings!
 
 # Disable expo-updates auto create updates resources in podspec script_phase
@@ -13,7 +12,7 @@ $expo_updates_create_updates_resources = false
 
 target 'Expo Go' do
   pod 'CocoaLumberjack', '~> 3.5.3'
-  pod 'GoogleMaps', '~> 7.3.0'
+  pod 'GoogleMaps', '~> 7.4.0'
   pod 'Google-Maps-iOS-Utils', :git => 'https://github.com/googlemaps/google-maps-ios-utils.git'
   pod 'JKBigInteger', :podspec => 'vendored/common/JKBigInteger.podspec.json'
   pod 'MBProgressHUD', '~> 1.2.0'
@@ -52,7 +51,18 @@ target 'Expo Go' do
   # Install vendored pods.
   use_pods! 'vendored/unversioned/**/*.podspec.json'
 
-  # React Native
+  config_command = [
+    'node',
+    '--no-warnings',
+    '--eval',
+    'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+    'react-native-config',
+    '--json',
+    '--platform',
+    'ios'
+  ]
+  config = use_native_modules!(config_command)
+
   use_react_native!(
     :path => '../../../react-native-lab/react-native/packages/react-native',
     :hermes_enabled => true,
@@ -93,7 +103,7 @@ target 'Expo Go' do
       end
 
       target_installation_result.native_target.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.4'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
       end
 
       if pod_name == 'Branch'

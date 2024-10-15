@@ -6,7 +6,86 @@
 
 ### 🎉 New features
 
+- Added `withDevelopmentTeam` to change the Apple development team id. ([#30761](https://github.com/expo/expo/pull/30761) by [@byCedric](https://github.com/byCedric))
+
 ### 🐛 Bug fixes
+
+- fix: more strict config plugin resolution ([#31569](https://github.com/expo/expo/pull/31569) by [@vonovak](https://github.com/vonovak))
+
+### 💡 Others
+
+- Upgrade `glob@7` to `glob@10`. ([#29894](https://github.com/expo/expo/pull/29894) by [@byCedric](https://github.com/byCedric))
+- Deprecated the Android style method `getAppThemeLightNoActionBarGroup` and replaced it with `getAppThemeGroup`, which does not override the parent theme if its parent theme changes. ([#30797](https://github.com/expo/expo/pull/30797) by [@zoontek](https://github.com/zoontek))
+- Updated snapshots with iOS deployment target set to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
+## 8.0.9 - 2024-09-24
+
+### 🎉 New features
+
+- Add `updates.useEmbeddedUpdate` key ([#31608](https://github.com/expo/expo/pull/31608) by [@brentvatne](https://github.com/brentvatne))
+
+## 8.0.8 - 2024-07-11
+
+### 🐛 Bug fixes
+
+- On `Android`, Build settings related to gradle.properties will now be **merged** (_and deduped_) if they are `Arrays` instead of overwritten. For now the only array value is `extraMavenRepos`. This allow library plugins to use `extraMavenRepos` even if they are not the last plugin called. ([#30269](https://github.com/expo/expo/pull/30269) by [@Titozzz](https://github.com/Titozzz))
+
+## 8.0.7 - 2024-07-03
+
+_This version does not introduce any user-facing changes._
+
+## 8.0.6 - 2024-06-27
+
+### 🐛 Bug fixes
+
+- On `Android`, fix setting `translucent` on the status bar. ([#29803](https://github.com/expo/expo/pull/29803) by [@alanjhughes](https://github.com/alanjhughes))
+
+## 8.0.5 - 2024-06-05
+
+### 🐛 Bug fixes
+
+- Improved android manifest queries, making package optional and changing provider to array ([#29418](https://github.com/expo/expo/pull/29418) by [@Titozzz](https://github.com/Titozzz))
+
+## 8.0.4 — 2024-05-01
+
+### 🐛 Bug fixes
+
+- Package names using kotlin keywords like `is`, `in`, `fun` etc work. ([#27458](https://github.com/expo/expo/pull/27458) by [@pvinis](https://github.com/pvinis))
+
+## 8.0.3 — 2024-04-25
+
+### 🐛 Bug fixes
+
+- Fix absolute path included in `.pbxproj` by the privacy info plugin. ([#28449](https://github.com/expo/expo/pull/28449) by [@aleqsio](https://github.com/aleqsio))
+
+## 8.0.2 — 2024-04-24
+
+### 🎉 New features
+
+- Add `withPodfile` config plugin to replace `withDangerousMods` for Podfile actions. ([#27209](https://github.com/expo/expo/pull/27209) by [@bycedric](https://github.com/byCedric)))
+
+## 8.0.1 — 2024-04-22
+
+### 💡 Others
+
+- Remove warning when using fingerprint. ([#28329](https://github.com/expo/expo/pull/28329) by [@wschurman](https://github.com/wschurman))
+
+## 8.0.0 — 2024-04-18
+
+### 💡 Others
+
+- Update fingerprintExperimental -> fingerprint runtime version policy. ([#28220](https://github.com/expo/expo/pull/28220) by [@wschurman](https://github.com/wschurman))
+
+## 8.0.0-beta.0 — 2024-04-17
+
+### 🎉 New features
+
+- Add privacy info config plugin. ([#28005](https://github.com/expo/expo/pull/28005) by [@aleqsio](https://github.com/aleqsio))
+
+### 🐛 Bug fixes
+
+- Fix xcprivacy being added to build sources instead of resources. ([#28223](https://github.com/expo/expo/pull/28223) by [@aleqsio](https://github.com/aleqsio))
+- Fix filepath and make the plugin merge new and existing privacy info. ([#28082](https://github.com/expo/expo/pull/28082) by [@aleqsio](https://github.com/aleqsio))
 
 ### 💡 Others
 
@@ -14,6 +93,7 @@
 - [expo-updates] Remove unused methods. ([#26810](https://github.com/expo/expo/pull/26810) by [@wschurman](https://github.com/wschurman))
 - [expo-updates] Fix fingerprint runtime version policy. ([#26901](https://github.com/expo/expo/pull/26901) by [@wschurman](https://github.com/wschurman))
 - Add expo-updates cli runtimeversion:resolve command. ([#27263](https://github.com/expo/expo/pull/27263) by [@wschurman](https://github.com/wschurman))
+- Migrated dependency from `@react-native/normalize-color` to `@react-native/normalize-colors`. ([#27736](https://github.com/expo/expo/pull/27736) by [@kudo](https://github.com/kudo))
 
 ### 📚 3rd party library updates
 

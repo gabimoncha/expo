@@ -6,11 +6,41 @@
 
 import Foundation
 import ExpoModulesCore
+import EXUpdatesInterface
 
 public struct UpdatesModuleConstants {
+  public init(
+    launchedUpdate: Update?,
+    launchDuration: Double?,
+    embeddedUpdate: Update?,
+    emergencyLaunchException: Error?,
+    isEnabled: Bool,
+    isUsingEmbeddedAssets: Bool,
+    runtimeVersion: String?,
+    checkOnLaunch: CheckAutomaticallyConfig,
+    requestHeaders: [String: String],
+    assetFilesMap: [String: Any]?,
+    shouldDeferToNativeForAPIMethodAvailabilityInDevelopment: Bool,
+    initialContext: UpdatesStateContext
+  ) {
+    self.launchedUpdate = launchedUpdate
+    self.launchDuration = launchDuration
+    self.embeddedUpdate = embeddedUpdate
+    self.emergencyLaunchException = emergencyLaunchException
+    self.isEnabled = isEnabled
+    self.isUsingEmbeddedAssets = isUsingEmbeddedAssets
+    self.runtimeVersion = runtimeVersion
+    self.checkOnLaunch = checkOnLaunch
+    self.requestHeaders = requestHeaders
+    self.assetFilesMap = assetFilesMap
+    self.shouldDeferToNativeForAPIMethodAvailabilityInDevelopment = shouldDeferToNativeForAPIMethodAvailabilityInDevelopment
+    self.initialContext = initialContext
+  }
+
   let launchedUpdate: Update?
+  let launchDuration: Double?
   let embeddedUpdate: Update?
-  let isEmergencyLaunch: Bool
+  let emergencyLaunchException: Error?
   let isEnabled: Bool
   let isUsingEmbeddedAssets: Bool
   let runtimeVersion: String?
@@ -33,6 +63,37 @@ public struct UpdatesModuleConstants {
    calls to go through.
    */
   let shouldDeferToNativeForAPIMethodAvailabilityInDevelopment: Bool
+
+  let initialContext: UpdatesStateContext
+
+  public func toModuleConstantsMap() -> [String: Any?] {
+    var mutableMap: [String: Any?] = [
+      "isEmergencyLaunch": emergencyLaunchException != nil,
+      "emergencyLaunchReason": emergencyLaunchException?.localizedDescription,
+      "isEmbeddedLaunch": embeddedUpdate != nil && embeddedUpdate?.updateId == launchedUpdate?.updateId,
+      "isEnabled": isEnabled,
+      "launchDuration": launchDuration,
+      "isUsingEmbeddedAssets": isUsingEmbeddedAssets,
+      "runtimeVersion": runtimeVersion ?? "",
+      "checkAutomatically": checkOnLaunch.asString,
+      "channel": requestHeaders["expo-channel-name"] ?? "",
+      "shouldDeferToNativeForAPIMethodAvailabilityInDevelopment":
+        shouldDeferToNativeForAPIMethodAvailabilityInDevelopment || UpdatesUtils.isNativeDebuggingEnabled(),
+      "initialContext": initialContext.json
+    ]
+
+    if let launchedUpdate = launchedUpdate {
+      mutableMap["updateId"] = launchedUpdate.updateId.uuidString
+      mutableMap["commitTime"] = UInt64(floor(launchedUpdate.commitTime.timeIntervalSince1970 * 1000))
+      mutableMap["manifest"] = launchedUpdate.manifest.rawManifestJSON()
+    }
+
+    if let assetFilesMap = assetFilesMap {
+      mutableMap["localAssets"] = assetFilesMap
+    }
+
+    return mutableMap
+  }
 }
 
 public enum CheckForUpdateResult {
@@ -64,7 +125,11 @@ public protocol AppControllerInterface {
    */
   @objc func launchAssetUrl() -> URL?
 
-  @objc var isStarted: Bool { get }
+  /**
+   Indicates that the controller is in active state.
+   Currently it's only active for `EnabledAppController`.
+   */
+  @objc var isActiveController: Bool { get }
 
   /**
    Starts the update process to launch a previously-loaded update and (if configured to do so)
@@ -79,15 +144,9 @@ public protocol AppControllerInterface {
 }
 
 public protocol InternalAppControllerInterface: AppControllerInterface {
-  /**
-   The AppContext from expo-modules-core.
-   This is optional, but required for expo-updates module events to work.
-   */
-  var appContext: AppContext? { get set }
-
   var updatesDirectory: URL? { get }
 
-  var shouldEmitJsEvents: Bool { get set }
+  var eventManager: UpdatesEventManager { get }
 
   func getConstantsForModule() -> UpdatesModuleConstants
   func requestRelaunch(
@@ -110,10 +169,6 @@ public protocol InternalAppControllerInterface: AppControllerInterface {
     key: String,
     value: String?,
     success successBlockArg: @escaping () -> Void,
-    error errorBlockArg: @escaping (_ error: Exception) -> Void
-  )
-  func getNativeStateMachineContext(
-    success successBlockArg: @escaping (_ stateMachineContext: UpdatesStateContext) -> Void,
     error errorBlockArg: @escaping (_ error: Exception) -> Void
   )
 }
@@ -150,6 +205,19 @@ public class AppController: NSObject {
 
   public static func initializeWithoutStarting() {
     if _sharedInstance != nil {
+      return
+    }
+
+    if EXAppDefines.APP_DEBUG && !UpdatesUtils.isNativeDebuggingEnabled() {
+      #if USE_DEV_CLIENT
+      // Passing a reference to DevLauncherController over to the registry,
+      // which expo-dev-client can access.
+      let devLauncherController = initializeAsDevLauncherWithoutStarting()
+      _sharedInstance = devLauncherController
+      UpdatesControllerRegistry.sharedInstance.controller = devLauncherController
+      #else
+      _sharedInstance = DisabledAppController(error: nil)
+      #endif
       return
     }
 
@@ -229,7 +297,7 @@ public class AppController: NSObject {
     }
   }
 
-  public static func initializeAsDevLauncherWithoutStarting() -> DevLauncherAppController {
+  private static func initializeAsDevLauncherWithoutStarting() -> DevLauncherAppController {
     assert(_sharedInstance == nil, "UpdatesController must not be initialized prior to calling initializeAsDevLauncherWithoutStarting")
 
     var config: UpdatesConfig?
@@ -278,6 +346,21 @@ public class AppController: NSObject {
     if let dbError = dbError {
       throw dbError
     }
+  }
+
+  /**
+   For `UpdatesModule` to set the `shouldEmitJsEvents` property
+   */
+  internal static var shouldEmitJsEvents: Bool {
+    get { _sharedInstance?.eventManager.shouldEmitJsEvents ?? false }
+    set { _sharedInstance?.eventManager.shouldEmitJsEvents = newValue }
+  }
+
+  /**
+   Binds the `AppContext` instance from `UpdatesModule`.
+   */
+  internal static func bindAppContext(_ appContext: AppContext?) {
+    _sharedInstance?.eventManager.appContext = appContext
   }
 }
 

@@ -18,64 +18,23 @@ public final class UpdatesModule: Module {
     Name("ExpoUpdates")
 
     Events(
-      EXUpdatesEventName,
-      EXUpdatesStateChangeEventName,
-      UpdateAvailableEventName,
-      NoUpdateAvailableEventName,
-      ErrorEventName
+      EXUpdatesStateChangeEventName
     )
 
     Constants {
-      let constantsForModule = AppController.sharedInstance.getConstantsForModule()
-
-      let channel = constantsForModule.requestHeaders["expo-channel-name"] ?? ""
-      let runtimeVersion = constantsForModule.runtimeVersion ?? ""
-      let checkAutomatically = constantsForModule.checkOnLaunch.asString
-
-      guard AppController.sharedInstance.isStarted,
-        let launchedUpdate = constantsForModule.launchedUpdate else {
-        return [
-          "isEnabled": false,
-          "isEmbeddedLaunch": false,
-          "runtimeVersion": runtimeVersion,
-          "checkAutomatically": checkAutomatically,
-          "channel": channel,
-          "shouldDeferToNativeForAPIMethodAvailabilityInDevelopment":
-            constantsForModule.shouldDeferToNativeForAPIMethodAvailabilityInDevelopment || UpdatesUtils.isNativeDebuggingEnabled()
-        ]
-      }
-
-      let embeddedUpdate = constantsForModule.embeddedUpdate
-      let isEmbeddedLaunch = embeddedUpdate != nil && embeddedUpdate?.updateId == launchedUpdate.updateId
-
-      let commitTime = UInt64(floor(launchedUpdate.commitTime.timeIntervalSince1970 * 1000))
-      return [
-        "isEnabled": true,
-        "isEmbeddedLaunch": isEmbeddedLaunch,
-        "isUsingEmbeddedAssets": constantsForModule.isUsingEmbeddedAssets,
-        "updateId": launchedUpdate.updateId.uuidString,
-        "manifest": launchedUpdate.manifest.rawManifestJSON(),
-        "localAssets": constantsForModule.assetFilesMap,
-        "isEmergencyLaunch": constantsForModule.isEmergencyLaunch,
-        "runtimeVersion": runtimeVersion,
-        "checkAutomatically": checkAutomatically,
-        "channel": channel,
-        "commitTime": commitTime,
-        "shouldDeferToNativeForAPIMethodAvailabilityInDevelopment":
-          constantsForModule.shouldDeferToNativeForAPIMethodAvailabilityInDevelopment || UpdatesUtils.isNativeDebuggingEnabled()
-      ]
+      AppController.sharedInstance.getConstantsForModule().toModuleConstantsMap()
     }
 
     OnCreate {
-      AppController.sharedInstance.appContext = self.appContext
+      AppController.bindAppContext(self.appContext)
     }
 
     OnStartObserving {
-      AppController.sharedInstance.shouldEmitJsEvents = true
+      AppController.shouldEmitJsEvents = true
     }
 
     OnStopObserving {
-      AppController.sharedInstance.shouldEmitJsEvents = false
+      AppController.shouldEmitJsEvents = false
     }
 
     AsyncFunction("reload") { (promise: Promise) in
@@ -179,16 +138,6 @@ public final class UpdatesModule: Module {
           promise.reject("ERR_UPDATES_FETCH", error.localizedDescription)
           return
         }
-      } error: { error in
-        promise.reject(error)
-      }
-    }
-
-    // Getter used internally by useUpdates()
-    // to initialize its state
-    AsyncFunction("getNativeStateMachineContextAsync") { (promise: Promise) in
-      AppController.sharedInstance.getNativeStateMachineContext { stateMachineContext in
-        promise.resolve(stateMachineContext.json)
       } error: { error in
         promise.reject(error)
       }

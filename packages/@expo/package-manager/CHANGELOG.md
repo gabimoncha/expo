@@ -10,6 +10,22 @@
 
 ### 💡 Others
 
+- Remove file that causes expo repo to not be clonable on windows machines ([#31720](https://github.com/expo/expo/pull/31720) by [@acoates-ms](https://github.com/acoates-ms))
+- Update `npm-package-arg@^7` to `npm-package-arg@^11`. ([#30842](https://github.com/expo/expo/pull/30842) by [@kitten](https://github.com/kitten))
+- Simplify workspace root detection with `resolve-workspace-root`. ([#31124](https://github.com/expo/expo/pull/31124) by [@byCedric](https://github.com/byCedric))
+
+## 1.5.2 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 1.5.1 — 2024-04-22
+
+_This version does not introduce any user-facing changes._
+
+## 1.5.0 — 2024-04-18
+
+_This version does not introduce any user-facing changes._
+
 ## 1.4.2 - 2024-01-10
 
 ### 🐛 Bug fixes

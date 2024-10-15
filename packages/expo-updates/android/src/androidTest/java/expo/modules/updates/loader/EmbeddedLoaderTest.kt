@@ -11,6 +11,7 @@ import expo.modules.updates.db.entity.AssetEntity
 import expo.modules.updates.db.entity.UpdateEntity
 import expo.modules.updates.db.enums.UpdateStatus
 import expo.modules.updates.loader.Loader.LoaderCallback
+import expo.modules.updates.logging.UpdatesLogger
 import expo.modules.updates.manifest.EmbeddedUpdate
 import expo.modules.updates.manifest.Update
 import io.mockk.every
@@ -30,6 +31,7 @@ import java.security.NoSuchAlgorithmException
 class EmbeddedLoaderTest {
   private lateinit var db: UpdatesDatabase
   private lateinit var configuration: UpdatesConfiguration
+  private lateinit var logger: UpdatesLogger
   private lateinit var manifest: Update
   private lateinit var loader: EmbeddedLoader
   private lateinit var mockLoaderFiles: LoaderFiles
@@ -44,11 +46,13 @@ class EmbeddedLoaderTest {
     )
     configuration = UpdatesConfiguration(null, configMap)
     val context = InstrumentationRegistry.getInstrumentation().targetContext
+    logger = UpdatesLogger(context)
     db = Room.inMemoryDatabaseBuilder(context, UpdatesDatabase::class.java).build()
     mockLoaderFiles = mockk(relaxed = true)
     loader = EmbeddedLoader(
       context,
       configuration,
+      logger,
       db,
       File("testDirectory"),
       mockLoaderFiles
@@ -160,7 +164,7 @@ class EmbeddedLoaderTest {
 
     val existingAsset = AssetEntity("54da1e9816c77e30ebc5920e256736f2", "png")
     existingAsset.relativePath = "54da1e9816c77e30ebc5920e256736f2.png"
-    db.assetDao()._insertAsset(existingAsset)
+    db.assetDao().insertAssetForTest(existingAsset)
 
     loader.start(mockCallback)
 
@@ -186,7 +190,7 @@ class EmbeddedLoaderTest {
 
     val existingAsset = AssetEntity("54da1e9816c77e30ebc5920e256736f2", "png")
     existingAsset.relativePath = "54da1e9816c77e30ebc5920e256736f2.png"
-    db.assetDao()._insertAsset(existingAsset)
+    db.assetDao().insertAssetForTest(existingAsset)
 
     loader.start(mockCallback)
 

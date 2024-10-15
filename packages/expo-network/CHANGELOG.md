@@ -4,11 +4,34 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
+
+- Add network state change listeners ([#28808](https://github.com/expo/expo/pull/28808) by [@reichhartd](https://github.com/reichhartd))
 
 ### 🐛 Bug fixes
 
+- [Android] Fix `java.lang.IllegalArgumentException: NetworkCallback was not registered`. ([#30185](https://github.com/expo/expo/pull/30185) by [@lukmccall](https://github.com/lukmccall))
+- [iOS] Fix wired ethernet connection being reported as unknown type. ([#30169](https://github.com/expo/expo/pull/30169) by [@Simek](https://github.com/Simek))
+- [iOS] Fix getting IP address from wired ethernet connection interfaces. ([#31223](https://github.com/expo/expo/pull/31223) by [@matt-oakes](https://github.com/matt-oakes))
+- Add missing `react` peer dependencies for isolated modules. ([#30477](https://github.com/expo/expo/pull/30477) by [@byCedric](https://github.com/byCedric))
+
 ### 💡 Others
+
+## 6.0.1 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.0 — 2024-04-18
+
+### 🎉 New features
+
+- Add Apple TV support. ([#27819](https://github.com/expo/expo/pull/27819) by [@douglowder](https://github.com/douglowder))
+
+### 💡 Others
+
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 5.8.0 — 2023-11-14
 

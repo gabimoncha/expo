@@ -10,9 +10,6 @@
       "credentialsSource": "local",
       "android": {
         "image": "ubuntu-22.04-jdk-17-ndk-r21e",
-        "cache": {
-          "customPaths": ["../expo-go/android/prebuiltHermes"]
-        },
         "resourceClass": "large",
         "env": {
           "EAS_BUILD_PLATFORM": "android",
@@ -23,11 +20,11 @@
       },
       "ios": {
         "cache": {
-          "key": "sdk50-0.73.4",
+          "key": "sdk52-0.76.0",
           "customPaths": ["../expo-go/ios/Pods"]
         },
-        "image": "macos-ventura-13.6-xcode-15.0",
-        "cocoapods": "1.14.2",
+        "image": "macos-sonoma-14.6-xcode-16.0",
+        "cocoapods": "1.15.2",
         "resourceClass": "medium",
         "env": {
           "EAS_BUILD_PLATFORM": "ios",
@@ -83,7 +80,7 @@
           "disabled": true
         },
         "withoutCredentials": false,
-        "gradleCommand": ":app:bundleVersionedRelease"
+        "gradleCommand": ":app:bundleRelease"
       },
       "ios": {
         "autoIncrement": "buildNumber",

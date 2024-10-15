@@ -2,47 +2,53 @@
 
 package expo.modules.video
 
-import android.app.Activity
-import android.view.View
+import android.net.Uri
 import androidx.media3.common.PlaybackParameters
-import expo.modules.kotlin.apifeatures.EitherType
-import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Player.REPEAT_MODE_OFF
+import androidx.media3.common.Player.REPEAT_MODE_ONE
+import com.facebook.react.common.annotations.UnstableReactNativeAPI
 import com.facebook.react.uimanager.PixelUtil
 import com.facebook.react.uimanager.Spacing
 import com.facebook.react.uimanager.ViewProps
 import com.facebook.yoga.YogaConstants
-import expo.modules.kotlin.exception.Exceptions
+import expo.modules.kotlin.apifeatures.EitherType
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.types.Either
+import expo.modules.video.enums.ContentFit
+import expo.modules.video.player.VideoPlayer
+import expo.modules.video.records.BufferOptions
 import expo.modules.video.records.VideoSource
-import expo.modules.kotlin.views.ViewDefinitionBuilder
+import expo.modules.video.utils.ifYogaDefinedUse
+import expo.modules.video.utils.makeYogaUndefinedIfNegative
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 // https://developer.android.com/guide/topics/media/media3/getting-started/migration-guide#improvements_in_media3
+@UnstableReactNativeAPI
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class VideoModule : Module() {
-  private val activity: Activity
-    get() = appContext.activityProvider?.currentActivity ?: throw Exceptions.MissingActivity()
-
   override fun definition() = ModuleDefinition {
     Name("ExpoVideo")
 
+    OnCreate {
+      VideoManager.onModuleCreated(appContext)
+    }
+
     Function("isPictureInPictureSupported") {
-      return@Function VideoView.isPictureInPictureSupported(activity)
+      return@Function VideoView.isPictureInPictureSupported(appContext.throwingActivity)
     }
 
     View(VideoView::class) {
       Events(
         "onPictureInPictureStart",
-        "onPictureInPictureStop"
+        "onPictureInPictureStop",
+        "onFullscreenEnter",
+        "onFullscreenExit"
       )
 
       Prop("player") { view: VideoView, player: VideoPlayer ->
         view.videoPlayer = player
-        player.prepare()
       }
 
       Prop("nativeControls") { view: VideoView, useNativeControls: Boolean ->
@@ -104,10 +110,8 @@ class VideoModule : Module() {
         ViewProps.BORDER_BOTTOM_COLOR to Spacing.BOTTOM,
         ViewProps.BORDER_START_COLOR to Spacing.START,
         ViewProps.BORDER_END_COLOR to Spacing.END
-      ) { view: VideoView, index: Int, color: Int? ->
-        val rgbComponent = if (color == null) YogaConstants.UNDEFINED else (color and 0x00FFFFFF).toFloat()
-        val alphaComponent = if (color == null) YogaConstants.UNDEFINED else (color ushr 24).toFloat()
-        view.setBorderColor(index, rgbComponent, alphaComponent)
+      ) { view: VideoView, index: Int, color: Int ->
+        view.setBorderColor(index, color)
       }
 
       Prop("borderStyle") { view: VideoView, borderStyle: String? ->
@@ -127,7 +131,9 @@ class VideoModule : Module() {
       }
 
       AsyncFunction("startPictureInPicture") { view: VideoView ->
-        view.enterPictureInPicture()
+        view.runWithPiPMisconfigurationSoftHandling(true) {
+          view.enterPictureInPicture()
+        }
       }
 
       AsyncFunction("stopPictureInPicture") {
@@ -140,18 +146,17 @@ class VideoModule : Module() {
     }
 
     Class(VideoPlayer::class) {
-      Constructor { source: VideoSource ->
-        VideoPlayer(activity.applicationContext, appContext, source.toMediaItem())
+      Constructor { source: VideoSource? ->
+        val player = VideoPlayer(appContext.throwingActivity.applicationContext, appContext, source)
+        appContext.mainQueue.launch {
+          player.prepare()
+        }
+        return@Constructor player
       }
 
       Property("playing")
         .get { ref: VideoPlayer ->
           ref.playing
-        }
-
-      Property("isLoading")
-        .get { ref: VideoPlayer ->
-          ref.isLoading
         }
 
       Property("muted")
@@ -190,6 +195,25 @@ class VideoModule : Module() {
           }
         }
 
+      Property("currentLiveTimestamp")
+        .get { ref: VideoPlayer ->
+          runBlocking(appContext.mainQueue.coroutineContext) {
+            ref.currentLiveTimestamp
+          }
+        }
+
+      Property("currentOffsetFromLive")
+        .get { ref: VideoPlayer ->
+          runBlocking(appContext.mainQueue.coroutineContext) {
+            ref.currentOffsetFromLive
+          }
+        }
+
+      Property("duration")
+        .get { ref: VideoPlayer ->
+          ref.duration
+        }
+
       Property("playbackRate")
         .get { ref: VideoPlayer ->
           ref.playbackParameters.speed
@@ -201,6 +225,11 @@ class VideoModule : Module() {
           }
         }
 
+      Property("isLive")
+        .get { ref: VideoPlayer ->
+          ref.isLive
+        }
+
       Property("preservesPitch")
         .get { ref: VideoPlayer ->
           ref.preservesPitch
@@ -209,6 +238,21 @@ class VideoModule : Module() {
           appContext.mainQueue.launch {
             ref.preservesPitch = preservesPitch
           }
+        }
+
+      Property("showNowPlayingNotification")
+        .get { ref: VideoPlayer ->
+          ref.showNowPlayingNotification
+        }
+        .set { ref: VideoPlayer, showNotification: Boolean ->
+          appContext.mainQueue.launch {
+            ref.showNowPlayingNotification = showNotification
+          }
+        }
+
+      Property("status")
+        .get { ref: VideoPlayer ->
+          ref.status
         }
 
       Property("staysActiveInBackground")
@@ -233,6 +277,22 @@ class VideoModule : Module() {
           }
         }
 
+      Property("bufferedPosition")
+        .get { ref: VideoPlayer ->
+          // Same as currentTime
+          runBlocking(appContext.mainQueue.coroutineContext) {
+            ref.bufferedPosition
+          }
+        }
+
+      Property("bufferOptions")
+        .get { ref: VideoPlayer ->
+          ref.bufferOptions
+        }
+        .set { ref: VideoPlayer, bufferOptions: BufferOptions ->
+          ref.bufferOptions = bufferOptions
+        }
+
       Function("play") { ref: VideoPlayer ->
         appContext.mainQueue.launch {
           ref.player.play()
@@ -245,15 +305,26 @@ class VideoModule : Module() {
         }
       }
 
-      Function("replace") { ref: VideoPlayer, source: Either<String, VideoSource> ->
-        val videoSource = if (source.`is`(VideoSource::class)) {
-          source.get(VideoSource::class)
-        } else {
-          VideoSource(source.get(String::class))
+      Property("timeUpdateEventInterval")
+        .get { ref: VideoPlayer ->
+          ref.intervalUpdateClock.interval / 1000.0
+        }
+        .set { ref: VideoPlayer, intervalSeconds: Float ->
+          ref.intervalUpdateClock.interval = (intervalSeconds * 1000).toLong()
+        }
+
+      Function("replace") { ref: VideoPlayer, source: Either<Uri, VideoSource>? ->
+        val videoSource = source?.let {
+          if (it.`is`(VideoSource::class)) {
+            it.get(VideoSource::class)
+          } else {
+            VideoSource(it.get(Uri::class))
+          }
         }
 
         appContext.mainQueue.launch {
-          ref.player.setMediaItem(videoSource.toMediaItem())
+          ref.uncommittedSource = videoSource
+          ref.prepare()
         }
       }
 
@@ -279,15 +350,5 @@ class VideoModule : Module() {
     OnActivityEntersBackground {
       VideoManager.onAppBackgrounded()
     }
-  }
-}
-
-@Suppress("FunctionName")
-private inline fun <reified T : View, reified PropType, reified CustomValueType> ViewDefinitionBuilder<T>.PropGroup(
-  vararg props: Pair<String, CustomValueType>,
-  noinline body: (view: T, value: CustomValueType, prop: PropType) -> Unit
-) {
-  for ((name, value) in props) {
-    Prop<T, PropType>(name) { view, prop -> body(view, value, prop) }
   }
 }

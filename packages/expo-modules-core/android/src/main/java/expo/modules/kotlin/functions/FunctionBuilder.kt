@@ -2,7 +2,12 @@
 
 package expo.modules.kotlin.functions
 
-import expo.modules.kotlin.types.toAnyType
+import expo.modules.kotlin.component6
+import expo.modules.kotlin.component7
+import expo.modules.kotlin.component8
+import expo.modules.kotlin.types.enforceType
+import expo.modules.kotlin.types.toArgsArray
+import expo.modules.kotlin.types.toReturnType
 
 class FunctionBuilder(@PublishedApi internal val name: String) {
   @PublishedApi
@@ -12,7 +17,7 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
   inline fun Body(
     crossinline body: () -> Any?
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, emptyArray()) { body() }.also {
+    return SyncFunctionComponent(name, emptyArray(), toReturnType<Any?>()) { body() }.also {
       functionComponent = it
     }
   }
@@ -21,7 +26,7 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: () -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, emptyArray()) { body() }.also {
+    return SyncFunctionComponent(name, emptyArray(), toReturnType<R>()) { body() }.also {
       functionComponent = it
     }
   }
@@ -30,7 +35,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>())) { body(it[0] as P0) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0>(), toReturnType<R>()) { (p0) ->
+      enforceType<P0>(p0)
+      body(p0)
+    }.also {
       functionComponent = it
     }
   }
@@ -39,7 +47,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>())) { body(it[0] as P0, it[1] as P1) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1>(), toReturnType<R>()) { (p0, p1) ->
+      enforceType<P0, P1>(p0, p1)
+      body(p0, p1)
+    }.also {
       functionComponent = it
     }
   }
@@ -48,7 +59,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1, p2: P2) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>(), toAnyType<P2>())) { body(it[0] as P0, it[1] as P1, it[2] as P2) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1, P2>(), toReturnType<R>()) { (p0, p1, p2) ->
+      enforceType<P0, P1, P2>(p0, p1, p2)
+      body(p0, p1, p2)
+    }.also {
       functionComponent = it
     }
   }
@@ -57,7 +71,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1, p2: P2, p3: P3) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>(), toAnyType<P2>(), toAnyType<P3>())) { body(it[0] as P0, it[1] as P1, it[2] as P2, it[3] as P3) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1, P2, P3>(), toReturnType<R>()) { (p0, p1, p2, p3) ->
+      enforceType<P0, P1, P2, P3>(p0, p1, p2, p3)
+      body(p0, p1, p2, p3)
+    }.also {
       functionComponent = it
     }
   }
@@ -66,7 +83,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>(), toAnyType<P2>(), toAnyType<P3>(), toAnyType<P4>())) { body(it[0] as P0, it[1] as P1, it[2] as P2, it[3] as P3, it[4] as P4) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1, P2, P3, P4>(), toReturnType<R>()) { (p0, p1, p2, p3, p4) ->
+      enforceType<P0, P1, P2, P3, P4>(p0, p1, p2, p3, p4)
+      body(p0, p1, p2, p3, p4)
+    }.also {
       functionComponent = it
     }
   }
@@ -75,7 +95,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>(), toAnyType<P2>(), toAnyType<P3>(), toAnyType<P4>(), toAnyType<P5>())) { body(it[0] as P0, it[1] as P1, it[2] as P2, it[3] as P3, it[4] as P4, it[5] as P5) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1, P2, P3, P4, P5>(), toReturnType<R>()) { (p0, p1, p2, p3, p4, p5) ->
+      enforceType<P0, P1, P2, P3, P4, P5>(p0, p1, p2, p3, p4, p5)
+      body(p0, p1, p2, p3, p4, p5)
+    }.also {
       functionComponent = it
     }
   }
@@ -84,7 +107,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>(), toAnyType<P2>(), toAnyType<P3>(), toAnyType<P4>(), toAnyType<P5>(), toAnyType<P6>())) { body(it[0] as P0, it[1] as P1, it[2] as P2, it[3] as P3, it[4] as P4, it[5] as P5, it[6] as P6) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1, P2, P3, P4, P5, P6>(), toReturnType<R>()) { (p0, p1, p2, p3, p4, p5, p6) ->
+      enforceType<P0, P1, P2, P3, P4, P5, P6>(p0, p1, p2, p3, p4, p5, p6)
+      body(p0, p1, p2, p3, p4, p5, p6)
+    }.also {
       functionComponent = it
     }
   }
@@ -93,7 +119,10 @@ class FunctionBuilder(@PublishedApi internal val name: String) {
     name: String,
     crossinline body: (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7) -> R
   ): SyncFunctionComponent {
-    return SyncFunctionComponent(name, arrayOf(toAnyType<P0>(), toAnyType<P1>(), toAnyType<P2>(), toAnyType<P3>(), toAnyType<P4>(), toAnyType<P5>(), toAnyType<P6>(), toAnyType<P7>())) { body(it[0] as P0, it[1] as P1, it[2] as P2, it[3] as P3, it[4] as P4, it[5] as P5, it[6] as P6, it[7] as P7) }.also {
+    return SyncFunctionComponent(name, toArgsArray<P0, P1, P2, P3, P4, P5, P6, P7>(), toReturnType<R>()) { (p0, p1, p2, p3, p4, p5, p6, p7) ->
+      enforceType<P0, P1, P2, P3, P4, P5, P6, P7>(p0, p1, p2, p3, p4, p5, p6, p7)
+      body(p0, p1, p2, p3, p4, p5, p6, p7)
+    }.also {
       functionComponent = it
     }
   }

@@ -1,66 +1,63 @@
-import { ReactNode, PureComponent, useMemo, createRef } from 'react';
+import { ReactNode, PureComponent, createRef } from 'react';
 
 import NativeVideoModule from './NativeVideoModule';
 import NativeVideoView from './NativeVideoView';
-import { VideoPlayer, VideoSource, VideoViewProps } from './VideoView.types';
-
-export function useVideoPlayer(source: VideoSource): VideoPlayer {
-  return useMemo(() => {
-    if (typeof source === 'string') {
-      return new NativeVideoModule.VideoPlayer({
-        uri: source,
-      });
-    }
-    return new NativeVideoModule.VideoPlayer(source);
-  }, []);
-}
+import type { VideoPlayer } from './VideoPlayer.types';
+import type { VideoViewProps } from './VideoView.types';
 
 /**
  * Returns whether the current device supports Picture in Picture (PiP) mode.
+ *
+ * > **Note:** All major web browsers support Picture in Picture (PiP) mode except Firefox.
+ * > For more information, see [MDN web docs](https://developer.mozilla.org/en-US/docs/Web/API/Picture-in-Picture_API#browser_compatibility).
  * @returns A `boolean` which is `true` if the device supports PiP mode, and `false` otherwise.
  * @platform android
  * @platform ios
+ * @platform web
  */
-export function isPictureInPictureSupported(): Promise<boolean> {
+export function isPictureInPictureSupported(): boolean {
   return NativeVideoModule.isPictureInPictureSupported();
 }
 
 export class VideoView extends PureComponent<VideoViewProps> {
   nativeRef = createRef<any>();
 
-  replace(source: VideoSource) {
-    if (typeof source === 'string') {
-      this.nativeRef.current?.replace({ uri: source });
-      return;
-    }
-    this.nativeRef.current?.replace(source);
+  /**
+   * Enters fullscreen mode.
+   */
+  async enterFullscreen(): Promise<void> {
+    return await this.nativeRef.current?.enterFullscreen();
   }
 
-  enterFullscreen() {
-    this.nativeRef.current?.enterFullscreen();
-  }
-
-  exitFullscreen() {
-    this.nativeRef.current?.exitFullscreen();
+  /**
+   * Exits fullscreen mode.
+   */
+  async exitFullscreen(): Promise<void> {
+    return await this.nativeRef.current?.exitFullscreen();
   }
 
   /**
    * Enters Picture in Picture (PiP) mode. Throws an exception if the device does not support PiP.
    * > **Note:** Only one player can be in Picture in Picture (PiP) mode at a time.
+   *
+   * > **Note:** The `supportsPictureInPicture` property of the [config plugin](#configuration-in-app-config)
+   * > has to be configured for the PiP to work.
    * @platform android
-   * @platform ios 14+
+   * @platform ios
+   * @platform web
    */
-  startPictureInPicture() {
-    return this.nativeRef.current?.startPictureInPicture();
+  async startPictureInPicture(): Promise<void> {
+    return await this.nativeRef.current?.startPictureInPicture();
   }
 
   /**
    * Exits Picture in Picture (PiP) mode.
    * @platform android
-   * @platform ios 14+
+   * @platform ios
+   * @platform web
    */
-  stopPictureInPicture() {
-    return this.nativeRef.current?.stopPictureInPicture();
+  async stopPictureInPicture(): Promise<void> {
+    return await this.nativeRef.current?.stopPictureInPicture();
   }
 
   render(): ReactNode {

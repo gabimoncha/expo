@@ -6,7 +6,9 @@ import { mockSpawnPromise, STUB_SPAWN_CHILD } from '../../__tests__/spawn-utils'
 import { YarnPackageManager } from '../YarnPackageManager';
 
 jest.mock('@expo/spawn-async');
-jest.mock('fs');
+// Jest doesn't mock `node:fs` when mocking `fs`
+jest.mock('fs', () => require('memfs').fs);
+jest.mock('node:fs', () => require('memfs').fs);
 
 beforeAll(() => {
   // Disable logging to clean up test ouput
@@ -45,6 +47,19 @@ describe('YarnPackageManager', () => {
         expect.objectContaining({
           env: { ADBLOCK: '0', DISABLE_OPENCOLLECTIVE: '1' },
         })
+      );
+    });
+  });
+
+  describe('runBinAsync', () => {
+    it('executes yarn with the expected command and options', async () => {
+      const yarn = new YarnPackageManager({ cwd: projectRoot });
+      await yarn.runBinAsync(['eslint', '.']);
+
+      expect(spawnAsync).toHaveBeenCalledWith(
+        'yarnpkg',
+        expect.arrayContaining(['eslint', '.']),
+        expect.objectContaining({ cwd: projectRoot })
       );
     });
   });

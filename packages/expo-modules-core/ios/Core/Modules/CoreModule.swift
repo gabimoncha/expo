@@ -1,3 +1,7 @@
+// Copyright 2015-present 650 Industries. All rights reserved.
+
+import React
+
 // The core module that describes the `global.expo` object.
 internal final class CoreModule: Module {
   internal func definition() -> ModuleDefinition {
@@ -17,7 +21,7 @@ internal final class CoreModule: Module {
     Function("getViewConfig") { (viewName: String) -> [String: Any]? in
       var validAttributes: [String: Any] = [:]
       var directEventTypes: [String: Any] = [:]
-      let moduleHolder = appContext?.moduleRegistry.get(moduleHolderForName: viewName)
+      let moduleHolder = appContext?.moduleRegistry.get(moduleHolderForName: getHolderName(viewName))
 
       guard let viewDefinition = moduleHolder?.definition.view else {
         return nil
@@ -39,5 +43,19 @@ internal final class CoreModule: Module {
         "directEventTypes": directEventTypes
       ]
     }
+
+    AsyncFunction("reloadAppAsync") { (reason: String) in
+      DispatchQueue.main.async {
+        RCTTriggerReloadCommandListeners(reason)
+      }
+    }
+  }
+
+  private func getHolderName(_ viewName: String) -> String {
+    if let appIdentifier = appContext?.appIdentifier, viewName.hasSuffix("_\(appIdentifier)") {
+      return String(viewName.dropLast("_\(appIdentifier)".count))
+    }
+
+    return viewName
   }
 }

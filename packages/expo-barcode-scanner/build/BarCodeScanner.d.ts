@@ -99,7 +99,9 @@ export type BarCodeScannerProps = ViewProps & {
 };
 /**
  * @deprecated
- * BarCodeScanner has been deprecated and will be removed in a future SDK version. Plesae use `expo-camera` instead. see [barcode-scanner-to-expo-camera](https://expo.fyi/barcode-scanner-to-expo-camera) for more details on how to migrate.
+ * BarCodeScanner has been deprecated and will be removed in a future SDK version. Use `expo-camera` instead.
+ * See [How to migrate from `expo-barcode-scanner` to `expo-camera`](https://expo.fyi/barcode-scanner-to-expo-camera)
+ * for more details.
  */
 export declare class BarCodeScanner extends React.Component<BarCodeScannerProps> {
     lastEvents: {
@@ -153,7 +155,7 @@ export declare class BarCodeScanner extends React.Component<BarCodeScannerProps>
      * code.
      */
     static scanFromURLAsync(url: string, barCodeTypes?: string[]): Promise<BarCodeScannerResult[]>;
-    render(): JSX.Element;
+    render(): React.JSX.Element;
     /**
      * @hidden
      */

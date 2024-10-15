@@ -179,14 +179,17 @@ describe('exports static', () => {
     // non-public env vars are injected during SSG
     expect(queryMeta('expo-e2e-private-env-var-client')).toEqual('not-public-value');
 
-    indexHtml.querySelectorAll('script').forEach((script) => {
-      const jsBundle = fs.readFileSync(path.join(outputDir, script.attributes.src), 'utf8');
+    indexHtml
+      .querySelectorAll('script')
+      .filter((script) => !!script.attributes.src)
+      .forEach((script) => {
+        const jsBundle = fs.readFileSync(path.join(outputDir, script.attributes.src), 'utf8');
 
-      // Ensure the bundle is valid
-      expect(jsBundle).toMatch('__BUNDLE_START_TIME__');
-      // Ensure the non-public env var is not included in the bundle
-      expect(jsBundle).not.toMatch('not-public-value');
-    });
+        // Ensure the bundle is valid
+        expect(jsBundle).toMatch('__BUNDLE_START_TIME__');
+        // Ensure the non-public env var is not included in the bundle
+        expect(jsBundle).not.toMatch('not-public-value');
+      });
   });
 
   it('static styles are injected', async () => {
@@ -264,11 +267,11 @@ describe('exports static', () => {
     const links = indexHtml.querySelectorAll('html > head > link[as="font"]');
     expect(links.length).toBe(1);
     expect(links[0].attributes.href).toBe(
-      '/assets/__e2e__/static-rendering/sweet.7c9263d3cffcda46ff7a4d9c00472c07.ttf?platform=web&hash=7c9263d3cffcda46ff7a4d9c00472c07'
+      '/assets/__e2e__/static-rendering/sweet.7c9263d3cffcda46ff7a4d9c00472c07.ttf'
     );
 
     expect(links[0].toString()).toMatch(
-      /<link rel="preload" href="\/assets\/__e2e__\/static-rendering\/sweet\.[a-zA-Z0-9]{32}\.ttf\?platform=web&hash=[a-zA-Z0-9]{32}" as="font" crossorigin="" >/
+      /<link rel="preload" href="\/assets\/__e2e__\/static-rendering\/sweet\.[a-zA-Z0-9]{32}\.ttf" as="font" crossorigin="" >/
     );
 
     expect(

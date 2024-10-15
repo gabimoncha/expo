@@ -29,15 +29,22 @@ if (!Fingerprint) {
 
   const projectRoot = process.argv[2];
 
+  const options = {
+    debug: !!process.env.DEBUG,
+    useRNCoreAutolinkingFromExpo: process.env.USE_RNCORE_AUTOLINKING_FROM_EXPO
+      ? ['1', 'true'].includes(process.env.USE_RNCORE_AUTOLINKING_FROM_EXPO)
+      : undefined,
+  }
   try {
     if (comparatorFingerprint) {
       const diff = await Fingerprint.diffFingerprintChangesAsync(
         comparatorFingerprint,
-        projectRoot
+        projectRoot,
+        options
       );
       console.log(JSON.stringify(diff, null, 2));
     } else {
-      const fingerprint = await Fingerprint.createFingerprintAsync(projectRoot);
+      const fingerprint = await Fingerprint.createFingerprintAsync(projectRoot, options);
       console.log(JSON.stringify(fingerprint, null, 2));
     }
     // console.log(fingerprint.hash);

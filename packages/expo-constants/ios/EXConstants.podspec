@@ -11,9 +11,9 @@ Pod::Spec.new do |s|
   s.author         = package['author']
   s.homepage       = package['homepage']
   s.platforms       = {
-    :ios => '13.4',
+    :ios => '15.1',
     :osx => '10.15',
-    :tvos => '13.4'
+    :tvos => '15.1'
   }
   s.swift_version  = '5.4'
   s.source         = { git: 'https://github.com/expo/expo.git' }
@@ -43,7 +43,8 @@ Pod::Spec.new do |s|
   # Generate EXConstants.bundle without existing resources
   # `get-app-config-ios.sh` will generate app.config in EXConstants.bundle
   s.resource_bundles = {
-    'EXConstants' => []
+    'EXConstants' => [],
+    'ExpoConstants_privacy' => ['PrivacyInfo.xcprivacy']
   }
 
 end

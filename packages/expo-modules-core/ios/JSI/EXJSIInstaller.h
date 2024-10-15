@@ -1,6 +1,6 @@
 // Copyright 2018-present 650 Industries. All rights reserved.
 
-#import <React/RCTBridge.h>
+#import <React/React-Core-umbrella.h>
 
 // Swift classes need forward-declaration in the headers.
 @class EXAppContext;
@@ -9,6 +9,11 @@
 #if __has_include(<ReactCommon/RCTRuntimeExecutor.h>)
 @class RCTRuntimeExecutor;
 #endif // React Native >=0.74
+
+/**
+ Property name of the core object in the global scope of the Expo JS runtime.
+ */
+extern NSString * _Nonnull const EXGlobalCoreObjectPropertyName;
 
 @interface EXJavaScriptRuntimeManager : NSObject
 
@@ -32,6 +37,11 @@
  Installs the base class for shared objects, i.e. `global.expo.SharedObject`.
  */
 + (void)installSharedObjectClass:(nonnull EXRuntime *)runtime releaser:(void(^)(long))releaser;
+
+/**
+ Installs the base class for shared refs, i.e. `global.expo.SharedRef`.
+ */
++ (void)installSharedRefClass:(nonnull EXRuntime *)runtime;
 
 /**
  Installs the EventEmitter class in the given runtime as `global.expo.EventEmitter`.

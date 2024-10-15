@@ -4,7 +4,19 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
+
+### 🐛 Bug fixes
+
+- [Android] Fixed a crash when the source cannot be retrieved. ([#28961](https://github.com/expo/expo/pull/28961) by [@mrakesh0608](https://github.com/mrakesh0608))
+
+### 💡 Others
+
+- [Android] Made sure that `MediaMetadataRetriever` is safely released. ([#29015](https://github.com/expo/expo/pull/29015) by [@lukmccall](https://github.com/lukmccall))
+
+## 8.0.0 — 2024-04-18
 
 ### 🐛 Bug fixes
 
@@ -13,6 +25,7 @@
 ### 💡 Others
 
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 7.9.0 — 2023-12-12
 

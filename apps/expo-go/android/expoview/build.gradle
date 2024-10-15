@@ -9,9 +9,6 @@ buildscript {
     google()
     maven { url "https://jitpack.io" }
   }
-  dependencies {
-    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${safeExtGet('kotlinVersion', '1.6.10')}")
-  }
 }
 
 plugins {
@@ -19,7 +16,6 @@ plugins {
    alias libs.plugins.kotlin.android
    alias libs.plugins.download
 }
-apply plugin: 'maven-publish'
 apply plugin: 'kotlin-kapt'
 apply from: new File(rootDir, "versioning_linking.gradle")
 
@@ -30,61 +26,33 @@ file("${project(':packages:react-native:ReactAndroid').projectDir}/gradle.proper
 //maven repository info
 group = 'host.exp.exponent'
 version = '45.0.0'
-
-afterEvaluate {
-  publishing {
-    publications {
-      // use `versionedRelease` configuration when publishing to maven
-      versionedRelease(MavenPublication) {
-        from components.release
-      }
-    }
-    repositories {
-      maven {
-        url = mavenLocal().url
-      }
-    }
-  }
-}
 // WHEN_VERSIONING_REMOVE_TO_HERE
 
-def prebuiltHermesDir = findProperty("expo.prebuiltHermesDir") ?: file("${rootDir}/prebuiltHermes")
-def prebuiltHermesVersion = file("${prebuiltHermesDir}/.hermesversion").exists() ? file("${prebuiltHermesDir}/.hermesversion").text : null
-def currentHermesVersion = file("${project(':packages:react-native:ReactAndroid').projectDir}/../sdks/.hermesversion").exists() ? file("${project(':packages:react-native:ReactAndroid').projectDir}/../sdks/.hermesversion").text : null
-def buildHermesSource = currentHermesVersion != prebuiltHermesVersion
-logger.info(":expoview - buildHermesSource[${buildHermesSource}]")
-
 def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
-if (expoModulesCorePlugin.exists()) {
-  apply from: expoModulesCorePlugin
-  applyKotlinExpoModulesCorePlugin()
-}
-
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useDefaultAndroidSdkVersions()
+useExpoPublishing()
 
 repositories {
   mavenCentral()
   maven { url "https://jitpack.io" }
 }
 
+
+apply plugin: 'com.facebook.react'
+
+react {
+  /* Autolinking */
+  autolinkLibrariesWithApp()
+}
+
+
 android {
   namespace "host.exp.expoview"
 
   buildFeatures {
     buildConfig = true
-  }
-
-  // Remove this if and it's contents, when support for SDK49 is dropped
-  if (!safeExtGet("expoProvidesDefaultConfig", false)) {
-    compileSdkVersion safeExtGet("compileSdkVersion", 34)
-
-    defaultConfig {
-      minSdkVersion safeExtGet("minSdkVersion", 23)
-      targetSdkVersion safeExtGet("targetSdkVersion", 34)
-    }
-
-    lintOptions {
-      abortOnError false
-    }
   }
 
   // Used to override the NDK path/version on internal CI or by allowing
@@ -94,18 +62,6 @@ android {
   }
   if (rootProject.hasProperty("ndkVersion")) {
     ndkVersion rootProject.ext.ndkVersion
-  }
-
-  def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
-  if (agpVersion.tokenize('.')[0].toInteger() < 8) {
-    compileOptions {
-      sourceCompatibility JavaVersion.VERSION_11
-      targetCompatibility JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-      jvmTarget = JavaVersion.VERSION_11.majorVersion
-    }
   }
 
   buildFeatures {
@@ -134,12 +90,6 @@ android {
   buildTypes {
     release {
       consumerProguardFiles('proguard-rules.pro')
-    }
-  }
-
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
     }
   }
 }
@@ -186,20 +136,12 @@ dependencies {
 
   api project(':packages:react-native:ReactAndroid')
 
-  if (!buildHermesSource) {
-    debugImplementation(files("${prebuiltHermesDir}/hermes-engine-debug.aar"))
-    releaseImplementation(files("${prebuiltHermesDir}/hermes-engine-release.aar"))
-  } else {
-    implementation(project(':packages:react-native:ReactAndroid:hermes-engine')) {
-      exclude(group:'com.facebook.fbjni', module: 'fbjni')
-    }
+  implementation(project(':packages:react-native:ReactAndroid:hermes-engine')) {
+    exclude(group:'com.facebook.fbjni', module: 'fbjni')
   }
 
   // Expo modules
   api project(':expo')
-
-  // expo-random is no longer a unimodule
-  api project(':expo-random')
 
   // Versioned react native
   // THIS COMMENT IS USED BY android-build-aar.sh DO NOT MODIFY
@@ -231,6 +173,7 @@ dependencies {
   api 'com.google.firebase:firebase-crashlytics:18.3.6'
   api 'com.google.firebase:firebase-crashlytics-ndk:18.3.6'
   api "androidx.room:room-runtime:2.1.0"
+  implementation 'com.google.android.material:material:1.3.0'
 
   api(expoLibs.fresco.animated.gif)
   api(expoLibs.fresco.animated.webp)
@@ -260,19 +203,6 @@ dependencies {
 
   // expo-face-detector
   implementation 'com.google.mlkit:face-detection:16.1.5'
-
-  // expo-ads-admob
-  implementation 'com.google.android.gms:play-services-ads:20.5.0'
-  // For apps targeting Android 12, add WorkManager dependency.
-  // See more at https://developers.google.com/admob/android/rel-notes
-  constraints {
-    implementation('androidx.work:work-runtime:2.7.0') {
-      because '''androidx.work:work-runtime:2.1.0 pulled from
-      play-services-ads has a bug using PendingIntent without
-      FLAG_IMMUTABLE or FLAG_MUTABLE and will fail in Apps
-      targeting S+.'''
-    }
-  }
 
   api 'com.google.firebase:firebase-core:21.1.0'
   api 'com.google.firebase:firebase-messaging:22.0.0'
@@ -304,19 +234,9 @@ dependencies {
   implementation "com.google.mlkit:barcode-scanning:17.2.0"
   implementation 'androidx.camera:camera-mlkit-vision:1.4.0-alpha02'
 
-  // expo-modules-core android-annotation
-  api project(':expo-modules-core$android-annotation')
-
   // expo-store-review
   implementation "com.google.android.play:review:2.0.1"
   implementation "com.google.android.play:review-ktx:2.0.0"
-
-  // expo-image
-  def GLIDE_VERSION = "4.13.2"
-  api "com.github.bumptech.glide:glide:${GLIDE_VERSION}"
-  kapt "com.github.bumptech.glide:compiler:${GLIDE_VERSION}"
-  implementation "com.github.bumptech.glide:avif-integration:${GLIDE_VERSION}"
-  implementation "jp.wasabeef:glide-transformations:4.3.0"
 
   //dbflow
   kapt "com.github.Raizlabs.DBFlow:dbflow-processor:${safeExtGet('dbFlowVersion', '4.2.4')}"
@@ -327,14 +247,6 @@ dependencies {
 
   // @react-native-community/viewpager
   api 'com.github.troZee:ViewPager2:v1.0.6'
-
-  // stripe-react-native
-  implementation('com.stripe:stripe-android:20.34.+')
-  implementation('com.stripe:financial-connections:20.34.+')
-  compileOnly 'com.stripe:stripe-android-issuing-push-provisioning:1.1.0'
-  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0'
-  implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.3.1"
-  implementation 'com.google.android.material:material:1.3.0'
 
   // react-native-webview
   implementation "androidx.webkit:webkit:1.4.0"

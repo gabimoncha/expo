@@ -26,11 +26,12 @@ describe('exports with react native canary', () => {
           env: {
             NODE_ENV: 'production',
             EXPO_USE_STATIC: 'static',
-            EXPO_E2E_RSC: '1',
+            E2E_CANARY_ENABLED: '1',
             E2E_ROUTER_JS_ENGINE: 'hermes',
             E2E_ROUTER_SRC: 'react-native-canary',
             E2E_ROUTER_ASYNC: 'development',
             EXPO_USE_FAST_RESOLVER: 'true',
+            EXPO_USE_METRO_REQUIRE: '1'
           },
         }
       );
@@ -82,6 +83,6 @@ describe('exports with react native canary', () => {
     // Minified mark
     expect(bundle).not.toMatch('__d((function(g,r,');
     // Canary comment. This needs to be updated with each canary.
-    expect(bundle).toMatch('SignedSource<<5843fb9d1b07b5f25448ca7aefcb1275>>');
+    expect(bundle).toMatch('canary-full/react/cjs/react.production.js');
   });
 });

@@ -4,14 +4,85 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
+- Add missing `react-native` peer dependencies for isolated modules. ([#30482](https://github.com/expo/expo/pull/30482) by [@byCedric](https://github.com/byCedric))
+
 ### 💡 Others
 
+- Fix incorrect event emitting tests. ([#28953](https://github.com/expo/expo/pull/28953) by [@aleqsio](https://github.com/aleqsio))
+- Removed redundant usage of `EventEmitter` instance. ([#28946](https://github.com/expo/expo/pull/28946) by [@tsapeta](https://github.com/tsapeta))
+- [Android] Remove usage of deprecated internal modules API. ([#28715](https://github.com/expo/expo/pull/28715) by [@lukmccall](https://github.com/lukmccall))
+- [iOS] Fix pedometer sensor when app goes to background then foreground. ([#29957]https://github.com/expo/expo/pull/29957) by [@rlods](https://github.com/rlods))
+
+### ⚠️ Notices
+
+- Added support for React Native 0.76.x. ([#31552](https://github.com/expo/expo/pull/31552) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 13.0.9 - 2024-06-27
+
+### 🎉 New features
+
+- [iOS] Allow excluding motion permission APIs. ([#29845](https://github.com/expo/expo/pull/29845) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 13.0.8 - 2024-05-29
+
+### 🐛 Bug fixes
+
+- [Android] Fixed `NPE` in `DeviceMotionListener`. ([#29022](https://github.com/expo/expo/pull/29022) by [@lukmccall](https://github.com/lukmccall))
+
+## 13.0.7 — 2024-05-15
+
+### 🐛 Bug fixes
+
+- [Android] Fix crash when using `DeviceMotion` module. ([#28839](https://github.com/expo/expo/pull/28839) by [@behenate](https://github.com/behenate))
+
+## 13.0.6 — 2024-05-13
+
+### 💡 Others
+
+- Add timestamps to relevant sensor events. ([#28761](https://github.com/expo/expo/pull/28761) by [@jkaufman](https://github.com/jkaufman))
+
+## 13.0.5 — 2024-05-06
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.4 — 2024-05-01
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.3 — 2024-04-24
+
+### 💡 Others
+
+- Update mocks for SDK51. ([#28424](https://github.com/expo/expo/pull/28424) by [@aleqsio](https://github.com/aleqsio))
+
+## 13.0.2 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.1 — 2024-04-19
+
+_This version does not introduce any user-facing changes._
+
+## 13.0.0 — 2024-04-18
+
+### 🐛 Bug fixes
+
+- Prevent unnecessary permissions check when moving app to background (Would crash with certain configs). ([#28045](https://github.com/expo/expo/pull/28045) by [@cltnschlosser](https://github.com/cltnschlosser))
+- Fix barometer updates not starting on iOS 17.4. ([#28253](https://github.com/expo/expo/pull/28253) by [@alanjhughes](https://github.com/alanjhughes))
+
+### 💡 Others
+
+- Prevent config plugin from writing permissions until prebuild. ([#28107](https://github.com/expo/expo/pull/28107) by [@EvanBacon](https://github.com/EvanBacon))
 - drop unused web `name` property. ([#27437](https://github.com/expo/expo/pull/27437) by [@EvanBacon](https://github.com/EvanBacon))
 - Fixed broken JavaScript unit tests. ([#27257](https://github.com/expo/expo/pull/27257) by [@kudo](https://github.com/kudo))
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
+- Removed the usage of the legacy EventEmitter. ([#28149](https://github.com/expo/expo/pull/28149) by [@tsapeta](https://github.com/tsapeta))
 
 ## 12.9.1 - 2024-01-26
 

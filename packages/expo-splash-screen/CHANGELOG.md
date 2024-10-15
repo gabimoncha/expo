@@ -4,11 +4,49 @@
 
 ### 🛠 Breaking changes
 
+- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
 ### 💡 Others
+
+## 0.27.6 - 2024-09-23
+
+_This version does not introduce any user-facing changes._
+
+## 0.27.5 - 2024-06-06
+
+_This version does not introduce any user-facing changes._
+
+## 0.27.4 — 2024-05-03
+
+### 💡 Others
+
+- No-op when native module is not installed ([#28599](https://github.com/expo/expo/pull/28599) by [@brentvatne](https://github.com/brentvatne))
+
+## 0.27.3 — 2024-05-01
+
+_This version does not introduce any user-facing changes._
+
+## 0.27.2 — 2024-04-23
+
+_This version does not introduce any user-facing changes._
+
+## 0.27.1 — 2024-04-22
+
+_This version does not introduce any user-facing changes._
+
+## 0.27.0 — 2024-04-18
+
+### 🐛 Bug fixes
+
+- Fixed white screen flickering when using expo-updates with longer `fallbackToCacheTimeout`. ([#28227](https://github.com/expo/expo/pull/28227) by [@kudo](https://github.com/kudo))
+
+### 💡 Others
+
+- Removed deprecated backward compatible Gradle settings. ([#28083](https://github.com/expo/expo/pull/28083) by [@kudo](https://github.com/kudo))
 
 ## 0.26.4 - 2024-01-24
 

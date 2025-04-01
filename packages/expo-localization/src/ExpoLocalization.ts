@@ -151,7 +151,7 @@ export default {
         }
       } catch {}
 
-      const { region, textInfo, language } = locale;
+      const { region, textInfo, language, script } = locale;
 
       if (region) {
         temperatureUnit = regionToTemperatureUnit(region);
@@ -160,13 +160,18 @@ export default {
       return {
         languageTag,
         languageCode: language || languageTag.split('-')[0] || 'en',
+        languageScriptCode: script || null,
         textDirection: (textInfo?.direction as 'ltr' | 'rtl') || null,
         digitGroupingSeparator,
         decimalSeparator,
         measurementSystem: null,
         currencyCode: null,
         currencySymbol: null,
+        languageCurrencyCode: null,
+        languageCurrencySymbol: null,
+        // On web, we don't have a way to get the region code, except from the language tag. `regionCode` and `languageRegionCode` are the same.
         regionCode: region || null,
+        languageRegionCode: region || null,
         temperatureUnit,
       };
     });

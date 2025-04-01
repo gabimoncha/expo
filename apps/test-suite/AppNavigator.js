@@ -28,20 +28,6 @@ const transitionSpec = shouldDisableTransition ? { open: spec, close: spec } : u
 export default function AppNavigator(props) {
   const { theme } = useTheme();
 
-  React.useLayoutEffect(() => {
-    if (props.navigation) {
-      props.navigation.setOptions({
-        title: 'Tests',
-        tabBarLabel: 'Tests',
-        tabBarIcon: ({ focused }) => {
-          const color = focused ? theme.icon.info : theme.icon.default;
-          return <MaterialCommunityIcons name="format-list-checks" size={27} color={color} />;
-        },
-        tabBarBackground: () => <TabBackground />,
-      });
-    }
-  }, [props.navigation]);
-
   return (
     <Stack.Navigator
       {...props}
@@ -68,7 +54,6 @@ export default function AppNavigator(props) {
           headerRight: () => (
             <View
               style={{
-                flex: 1,
                 flexDirection: 'row',
                 alignItems: 'center',
                 marginRight: 16,
@@ -83,6 +68,19 @@ export default function AppNavigator(props) {
       <Stack.Screen name="run" component={RunTests} options={{ title: 'Test Runner' }} />
     </Stack.Navigator>
   );
+}
+
+AppNavigator.navigationOptions = {
+  title: 'Tests',
+  tabBarLabel: 'Tests',
+  tabBarIcon: TabBarIcon,
+  tabBarBackground: () => <TabBackground />,
+};
+
+function TabBarIcon({ focused }) {
+  const { theme } = useTheme();
+  const color = focused ? theme.icon.info : theme.icon.default;
+  return <MaterialCommunityIcons name="format-list-checks" size={27} color={color} />;
 }
 
 function TabBackground() {

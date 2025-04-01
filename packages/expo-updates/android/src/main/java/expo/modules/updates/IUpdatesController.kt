@@ -3,7 +3,6 @@ package expo.modules.updates
 import android.os.Bundle
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.devsupport.interfaces.DevSupportManager
-import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.updates.db.entity.AssetEntity
 import expo.modules.updates.db.entity.UpdateEntity
@@ -12,7 +11,6 @@ import expo.modules.updates.loader.LoaderTask
 import expo.modules.updates.manifest.Update
 import expo.modules.updates.statemachine.UpdatesStateContext
 import java.io.File
-import java.lang.ref.WeakReference
 import java.util.Date
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -42,12 +40,9 @@ interface IUpdatesController {
    */
   val updatesDirectory: File?
 
-  /**
-   * The [AppContext] assigned from [UpdatesModule]
-   */
-  var appContext: WeakReference<AppContext>?
-
   val eventManager: IUpdatesEventManager
+
+  fun onEventListenerStartObserving()
 
   fun onDidCreateDevSupportManager(devSupportManager: DevSupportManager)
 
@@ -113,7 +108,7 @@ interface IUpdatesController {
       this["runtimeVersion"] = runtimeVersion ?: ""
       this["checkAutomatically"] = checkOnLaunch.toJSString()
       this["channel"] = requestHeaders["expo-channel-name"] ?: ""
-      this["shouldDeferToNativeForAPIMethodAvailabilityInDevelopment"] = shouldDeferToNativeForAPIMethodAvailabilityInDevelopment || BuildConfig.EX_UPDATES_NATIVE_DEBUG
+      this["shouldDeferToNativeForAPIMethodAvailabilityInDevelopment"] = shouldDeferToNativeForAPIMethodAvailabilityInDevelopment || UpdatesPackage.isUsingNativeDebug
       this["initialContext"] = initialContext.bundle
 
       if (launchedUpdate != null) {
@@ -170,4 +165,6 @@ interface IUpdatesController {
   fun getExtraParams(callback: ModuleCallback<Bundle>)
 
   fun setExtraParam(key: String, value: String?, callback: ModuleCallback<Unit>)
+
+  fun setUpdateURLAndRequestHeadersOverride(configOverride: UpdatesConfigurationOverride?)
 }

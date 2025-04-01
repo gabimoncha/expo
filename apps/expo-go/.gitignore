@@ -15,6 +15,7 @@ ReactAndroid-temp.aar
 /android/app/google-services.json
 /android/expoview/src/main/java/host/exp/exponent/generated/ExponentBuildConstants.java
 /android/app/src/androidTest/java/host/exp/exponent/generated/TestBuildConstants.java
+.kotlin/
 
 # iOS
 /ios/Pods
@@ -27,6 +28,9 @@ ReactAndroid-temp.aar
 /ios/Exponent/Supporting/GoogleService-Info.plist
 /ios/Exponent/Supporting/Info.plist.bak
 /ios/Exponent/Supporting/Info.plist.json
+
+# Vendored Modules
+/modules/**/build
 
 # JS
 dist/

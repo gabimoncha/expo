@@ -4,7 +4,7 @@ import { SchedulableTriggerInputTypes, } from './Notifications.types';
 /**
  * Schedules a notification to be triggered in the future.
  * > **Note:** Please note that this does not mean that the notification will be presented when it is triggered.
- * For the notification to be presented you have to set a notification handler with [`setNotificationHandler`](#notificationssetnotificationhandlerhandler)
+ * For the notification to be presented you have to set a notification handler with [`setNotificationHandler`](#setnotificationhandlerhandler)
  * that will return an appropriate notification behavior. For more information see the example below.
  * @param request An object describing the notification to be triggered.
  * @return Returns a Promise resolving to a string which is a notification identifier you can later use to cancel the notification or to identify an incoming notification.
@@ -19,6 +19,7 @@ import { SchedulableTriggerInputTypes, } from './Notifications.types';
  *     body: 'Change sides!',
  *   },
  *   trigger: {
+ *     type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
  *     seconds: 60,
  *   },
  * });
@@ -33,6 +34,7 @@ import { SchedulableTriggerInputTypes, } from './Notifications.types';
  *     title: 'Remember to drink water!',
  *   },
  *   trigger: {
+ *     type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
  *     seconds: 60 * 20,
  *     repeats: true,
  *   },
@@ -121,14 +123,16 @@ function parseCalendarTrigger(trigger) {
 }
 function parseDateTrigger(trigger) {
     if (trigger instanceof Date || typeof trigger === 'number') {
+        // TODO @vonovak this branch is not be used by people using TS
+        // but was part of the public api previously so we keep it for a bit for JS users
+        console.warn(`You are using a deprecated parameter type (${trigger}) for the notification trigger. Use "{ type: 'date', date: someValue }" instead.`);
         return { type: 'date', timestamp: toTimestamp(trigger) };
     }
     else if (typeof trigger === 'object' &&
         trigger !== null &&
         'type' in trigger &&
         trigger.type === SchedulableTriggerInputTypes.DATE &&
-        'date' in trigger &&
-        trigger.date instanceof Date) {
+        'date' in trigger) {
         const result = {
             type: 'date',
             timestamp: toTimestamp(trigger.date),

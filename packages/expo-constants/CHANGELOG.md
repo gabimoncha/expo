@@ -4,6 +4,55 @@
 
 ### 🛠 Breaking changes
 
+- Bump minimum macOS version to 11.0. ([#34980](https://github.com/expo/expo/pull/34980) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+### 🎉 New features
+
+### 🐛 Bug fixes
+
+- Add missing types to package exports ([#35223](https://github.com/expo/expo/pull/35223) by [@timostroehlein](https://github.com/timostroehlein))
+
+### 💡 Others
+
+- [android][ios] Updated Gradle build and Podspec files to ensure app.json/app.config.js values are correctly updated during each native build. ([#34228](https://github.com/expo/expo/pull/34228) by [@chrfalch](https://github.com/chrfalch))
+- [Android] Started using expo modules gradle plugin. ([#34176](https://github.com/expo/expo/pull/34176) by [@lukmccall](https://github.com/lukmccall))
+
+## 17.0.8 - 2025-03-11
+
+### 🐛 Bug fixes
+
+- [iOS] Fix pod install in older CocoaPods versions ([#35181](https://github.com/expo/expo/pull/35181) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 17.0.7 - 2025-02-19
+
+_This version does not introduce any user-facing changes._
+
+## 17.0.6 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 17.0.4 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 17.0.3 — 2024-11-14
+
+_This version does not introduce any user-facing changes._
+
+## 17.0.2 — 2024-10-28
+
+_This version does not introduce any user-facing changes._
+
+## 17.0.1 — 2024-10-22
+
+### 💡 Others
+
+- Fixed check-package test errors. ([#32232](https://github.com/expo/expo/pull/32232) by [@kudo](https://github.com/kudo))
+
+## 17.0.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
 - Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
 
 ### 🎉 New features

@@ -1,58 +1,70 @@
 package expo.modules.updates
 
 import android.content.Context
-import android.os.AsyncTask
+import android.net.Uri
 import android.os.Bundle
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.Exceptions
+import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import expo.modules.updates.events.UpdatesJSEvent
+import expo.modules.kotlin.records.Field
+import expo.modules.kotlin.records.Record
+import expo.modules.kotlin.types.Enumerable
+import expo.modules.updates.events.IUpdatesEventManagerObserver
 import expo.modules.updates.logging.UpdatesErrorCode
 import expo.modules.updates.logging.UpdatesLogEntry
 import expo.modules.updates.logging.UpdatesLogReader
 import expo.modules.updates.logging.UpdatesLogger
+import expo.modules.updates.statemachine.UpdatesStateContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.lang.ref.WeakReference
 import java.util.Date
+
+enum class UpdatesJSEvent(val eventName: String) : Enumerable {
+  StateChange("Expo.nativeUpdatesStateChangeEvent")
+}
 
 /**
  * Exported module which provides to the JS runtime information about the currently running update
  * and updates state, along with methods to check for and download new updates, reload with the
  * newest downloaded update applied, and read/clear native log entries.
  */
-class UpdatesModule : Module() {
+class UpdatesModule : Module(), IUpdatesEventManagerObserver {
   private val logger: UpdatesLogger
-    get() = UpdatesLogger(context)
+    get() = UpdatesLogger(context.filesDir)
 
   private val context: Context
     get() = appContext.reactContext ?: throw Exceptions.ReactContextLost()
 
+  private val moduleScope = CoroutineScope(Dispatchers.IO)
+
   override fun definition() = ModuleDefinition {
     Name("ExpoUpdates")
 
-    Events(
-      UpdatesJSEvent.StateChange.eventName
-    )
+    Events<UpdatesJSEvent>()
 
     Constants {
-      UpdatesLogger(context).info("UpdatesModule: getConstants called", UpdatesErrorCode.None)
+      UpdatesLogger(context.filesDir).info("UpdatesModule: getConstants called", UpdatesErrorCode.None)
       UpdatesController.instance.getConstantsForModule().toModuleConstantsMap()
     }
 
-    OnCreate {
-      UpdatesController.bindAppContext(
-        WeakReference(appContext),
-        appContext.eventEmitter(this@UpdatesModule)
-      )
+    OnStartObserving(UpdatesJSEvent.StateChange) {
+      UpdatesController.setUpdatesEventManagerObserver(WeakReference(this@UpdatesModule))
     }
 
-    OnStartObserving {
-      UpdatesController.shouldEmitJsEvents = true
+    OnStopObserving(UpdatesJSEvent.StateChange) {
+      UpdatesController.removeUpdatesEventManagerObserver()
     }
 
-    OnStopObserving {
-      UpdatesController.shouldEmitJsEvents = false
+    OnDestroy {
+      UpdatesController.removeUpdatesEventManagerObserver()
     }
 
     AsyncFunction("reload") { promise: Promise ->
@@ -77,6 +89,7 @@ class UpdatesModule : Module() {
               is IUpdatesController.CheckForUpdateResult.ErrorResult -> {
                 promise.reject("ERR_UPDATES_CHECK", "Failed to check for update", result.error)
               }
+
               is IUpdatesController.CheckForUpdateResult.NoUpdateAvailable -> {
                 promise.resolve(
                   Bundle().apply {
@@ -86,6 +99,7 @@ class UpdatesModule : Module() {
                   }
                 )
               }
+
               is IUpdatesController.CheckForUpdateResult.RollBackToEmbedded -> {
                 promise.resolve(
                   Bundle().apply {
@@ -94,6 +108,7 @@ class UpdatesModule : Module() {
                   }
                 )
               }
+
               is IUpdatesController.CheckForUpdateResult.UpdateAvailable -> {
                 promise.resolve(
                   Bundle().apply {
@@ -124,6 +139,7 @@ class UpdatesModule : Module() {
               is IUpdatesController.FetchUpdateResult.ErrorResult -> {
                 promise.reject("ERR_UPDATES_FETCH", "Failed to download new update", result.error)
               }
+
               is IUpdatesController.FetchUpdateResult.Failure -> {
                 promise.resolve(
                   Bundle().apply {
@@ -132,6 +148,7 @@ class UpdatesModule : Module() {
                   }
                 )
               }
+
               is IUpdatesController.FetchUpdateResult.RollBackToEmbedded -> {
                 promise.resolve(
                   Bundle().apply {
@@ -140,6 +157,7 @@ class UpdatesModule : Module() {
                   }
                 )
               }
+
               is IUpdatesController.FetchUpdateResult.Success -> {
                 promise.resolve(
                   Bundle().apply {
@@ -189,15 +207,13 @@ class UpdatesModule : Module() {
       )
     }
 
-    AsyncFunction("readLogEntriesAsync") { maxAge: Long, promise: Promise ->
-      AsyncTask.execute {
-        promise.resolve(readLogEntries(context, maxAge))
-      }
+    AsyncFunction("readLogEntriesAsync") Coroutine { maxAge: Long ->
+      return@Coroutine readLogEntries(context.filesDir, maxAge)
     }
 
     AsyncFunction("clearLogEntriesAsync") { promise: Promise ->
-      AsyncTask.execute {
-        clearLogEntries(context) { error ->
+      moduleScope.launch {
+        clearLogEntries(context.filesDir) { error ->
           if (error != null) {
             promise.reject(
               "ERR_UPDATES_READ_LOGS",
@@ -210,16 +226,28 @@ class UpdatesModule : Module() {
         }
       }
     }
+
+    Function("setUpdateURLAndRequestHeadersOverride") { configOverride: UpdatesConfigurationOverrideParam? ->
+      UpdatesController.instance.setUpdateURLAndRequestHeadersOverride(configOverride?.toUpdatesConfigurationOverride())
+    }
+
+    OnDestroy {
+      try {
+        moduleScope.cancel()
+      } catch (e: IllegalStateException) {
+        logger.error("The scope does not have a job in it", e)
+      }
+    }
   }
 
   companion object {
     private val TAG = UpdatesModule::class.java.simpleName
 
-    internal fun readLogEntries(context: Context, maxAge: Long): List<Bundle> {
-      val reader = UpdatesLogReader(context)
+    internal suspend fun readLogEntries(filesDirectory: File, maxAge: Long) = withContext(Dispatchers.IO) {
+      val reader = UpdatesLogReader(filesDirectory)
       val date = Date()
       val epoch = Date(date.time - maxAge)
-      return reader.getLogEntries(epoch)
+      reader.getLogEntries(epoch)
         .mapNotNull { UpdatesLogEntry.create(it) }
         .map { entry ->
           Bundle().apply {
@@ -240,12 +268,25 @@ class UpdatesModule : Module() {
         }
     }
 
-    internal fun clearLogEntries(context: Context, completionHandler: (_: Exception?) -> Unit) {
-      val reader = UpdatesLogReader(context)
+    internal suspend fun clearLogEntries(filesDirectory: File, completionHandler: (_: Exception?) -> Unit) {
+      val reader = UpdatesLogReader(filesDirectory)
       reader.purgeLogEntries(
         olderThan = Date(),
         completionHandler
       )
+    }
+  }
+
+  override fun onStateMachineContextEvent(context: UpdatesStateContext) {
+    sendEvent(UpdatesJSEvent.StateChange, Bundle().apply { putBundle("context", context.bundle) })
+  }
+
+  internal data class UpdatesConfigurationOverrideParam(
+    @Field val updateUrl: Uri,
+    @Field val requestHeaders: Map<String, String>
+  ) : Record {
+    fun toUpdatesConfigurationOverride(): UpdatesConfigurationOverride {
+      return UpdatesConfigurationOverride(updateUrl, requestHeaders)
     }
   }
 }

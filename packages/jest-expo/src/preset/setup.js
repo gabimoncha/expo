@@ -6,7 +6,7 @@
 
 const findUp = require('find-up');
 const path = require('path');
-const mockNativeModules = require('react-native/Libraries/BatchedBridge/NativeModules');
+const mockNativeModules = require('react-native/Libraries/BatchedBridge/NativeModules').default;
 const stackTrace = require('stacktrace-js');
 
 const publicExpoModules = require('./expoModules');
@@ -165,20 +165,26 @@ jest.mock('@react-native/assets-registry/registry', () => ({
   })),
 }));
 
-jest.doMock('react-native/Libraries/BatchedBridge/NativeModules', () => mockNativeModules);
+jest.doMock('react-native/Libraries/BatchedBridge/NativeModules', () => ({
+  __esModule: true,
+  default: mockNativeModules,
+}));
 
 jest.doMock('react-native/Libraries/LogBox/LogBox', () => ({
-  ignoreLogs: (patterns) => {
-    // Do nothing.
-  },
-  ignoreAllLogs: (value) => {
-    // Do nothing.
-  },
-  install: () => {
-    // Do nothing.
-  },
-  uninstall: () => {
-    // Do nothing.
+  __esModule: true,
+  default: {
+    ignoreLogs: (patterns) => {
+      // Do nothing.
+    },
+    ignoreAllLogs: (value) => {
+      // Do nothing.
+    },
+    install: () => {
+      // Do nothing.
+    },
+    uninstall: () => {
+      // Do nothing.
+    },
   },
 }));
 
@@ -241,6 +247,23 @@ try {
         }
       }
     }
+
+    function requireMockModule(name) {
+      // Support auto-mocking of expo-modules that:
+      // 1. have a mock in the `mocks` directory
+      // 2. the native module (e.g. ExpoCrypto) name matches the package name (expo-crypto)
+      const nativeModuleMock = attemptLookup(name) ?? ExpoModulesCore.requireNativeModule(name);
+      if (!nativeModuleMock) {
+        return null;
+      }
+
+      const nativeModule = new NativeModule();
+      for (const [key, value] of Object.entries(nativeModuleMock)) {
+        nativeModule[key] = typeof value === 'function' ? jest.fn(value) : value;
+      }
+      return nativeModule;
+    }
+
     return {
       ...ExpoModulesCore,
 
@@ -249,17 +272,13 @@ try {
       NativeModule,
       SharedObject,
 
-      requireNativeModule(name) {
-        // Support auto-mocking of expo-modules that:
-        // 1. have a mock in the `mocks` directory
-        // 2. the native module (e.g. ExpoCrypto) name matches the package name (expo-crypto)
-        const nativeModuleMock = attemptLookup(name) ?? ExpoModulesCore.requireNativeModule(name);
-        const nativeModule = new NativeModule();
-
-        for (const [key, value] of Object.entries(nativeModuleMock)) {
-          nativeModule[key] = typeof value === 'function' ? jest.fn(value) : value;
+      requireOptionalNativeModule: requireMockModule,
+      requireNativeModule(moduleName) {
+        const module = requireMockModule(moduleName);
+        if (!module) {
+          throw new Error(`Cannot find native module '${moduleName}'`);
         }
-        return nativeModule;
+        return module;
       },
       requireNativeViewManager: (name) => {
         const nativeModuleMock = attemptLookup(name);
@@ -280,5 +299,10 @@ try {
 // Installs web implementations of global things that are normally installed through JSI.
 require('expo-modules-core/src/web/index.web');
 
+jest.doMock('expo/src/winter/FormData', () => ({
+  // The `installFormDataPatch` function is for native runtime only,
+  // so we don't need to patch `FormData` for the jest runtime.
+  installFormDataPatch: jest.fn(),
+}));
 // Ensure the environment globals are installed before the first test runs.
 require('expo/src/winter');

@@ -1,9 +1,10 @@
+'use client';
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.routeToScreen = exports.screenOptionsFactory = exports.createGetIdForRoute = exports.getQualifiedRouteComponent = exports.useSortedScreens = void 0;
+exports.getSingularId = exports.routeToScreen = exports.screenOptionsFactory = exports.getQualifiedRouteComponent = exports.useSortedScreens = void 0;
 const react_1 = __importDefault(require("react"));
 const Route_1 = require("./Route");
 const import_mode_1 = __importDefault(require("./import-mode"));
@@ -19,7 +20,7 @@ function getSortedChildren(children, order, initialRouteName) {
     }
     const entries = [...children];
     const ordered = order
-        .map(({ name, redirect, initialParams, listeners, options, getId }) => {
+        .map(({ name, redirect, initialParams, listeners, options, getId, dangerouslySingular: singular, }) => {
         if (!entries.length) {
             console.warn(`[Layout children]: Too many screens defined. Route "${name}" is extraneous.`);
             return null;
@@ -39,6 +40,24 @@ function getSortedChildren(children, order, initialRouteName) {
                     throw new Error(`Redirecting to a specific route is not supported yet.`);
                 }
                 return null;
+            }
+            if (getId) {
+                console.warn(`Deprecated: prop 'getId' on screen ${name} is deprecated. Please rename the prop to 'dangerouslySingular'`);
+                if (singular) {
+                    console.warn(`Screen ${name} cannot use both getId and dangerouslySingular together.`);
+                }
+            }
+            else if (singular) {
+                // If singular is set, use it as the getId function.
+                if (typeof singular === 'string') {
+                    getId = () => singular;
+                }
+                else if (typeof singular === 'function' && name) {
+                    getId = (options) => singular(name, options.params || {});
+                }
+                else if (singular === true && name) {
+                    getId = (options) => getSingularId(name, options);
+                }
             }
             return {
                 route: match,
@@ -137,37 +156,6 @@ function getQualifiedRouteComponent(value) {
     return QualifiedRoute;
 }
 exports.getQualifiedRouteComponent = getQualifiedRouteComponent;
-/** @returns a function which provides a screen id that matches the dynamic route name in params. */
-function createGetIdForRoute(route) {
-    const include = new Map();
-    if (route.dynamic) {
-        for (const segment of route.dynamic) {
-            include.set(segment.name, segment);
-        }
-    }
-    return ({ params = {} } = {}) => {
-        const segments = [];
-        for (const dynamic of include.values()) {
-            const value = params?.[dynamic.name];
-            if (Array.isArray(value) && value.length > 0) {
-                // If we are an array with a value
-                segments.push(value.join('/'));
-            }
-            else if (value && !Array.isArray(value)) {
-                // If we have a value and not an empty array
-                segments.push(value);
-            }
-            else if (dynamic.deep) {
-                segments.push(`[...${dynamic.name}]`);
-            }
-            else {
-                segments.push(`[${dynamic.name}]`);
-            }
-        }
-        return segments.join('/') ?? route.contextKey;
-    };
-}
-exports.createGetIdForRoute = createGetIdForRoute;
 function screenOptionsFactory(route, options) {
     return (args) => {
         // Only eager load generated components
@@ -180,6 +168,7 @@ function screenOptionsFactory(route, options) {
         };
         // Prevent generated screens from showing up in the tab bar.
         if (route.generated) {
+            output.tabBarItemStyle = { display: 'none' };
             output.tabBarButton = () => null;
             // TODO: React Navigation doesn't provide a way to prevent rendering the drawer item.
             output.drawerItemStyle = { height: 0, display: 'none' };
@@ -188,10 +177,25 @@ function screenOptionsFactory(route, options) {
     };
 }
 exports.screenOptionsFactory = screenOptionsFactory;
-function routeToScreen(route, { options, ...props } = {}) {
-    return (<primitives_1.Screen 
-    // Users can override the screen getId function.
-    getId={createGetIdForRoute(route)} {...props} name={route.route} key={route.route} options={screenOptionsFactory(route, options)} getComponent={() => getQualifiedRouteComponent(route)}/>);
+function routeToScreen(route, { options, getId, ...props } = {}) {
+    return (<primitives_1.Screen {...props} name={route.route} key={route.route} getId={getId} options={screenOptionsFactory(route, options)} getComponent={() => getQualifiedRouteComponent(route)}/>);
 }
 exports.routeToScreen = routeToScreen;
+function getSingularId(name, options = {}) {
+    return name
+        .split('/')
+        .map((segment) => {
+        if (segment.startsWith('[...')) {
+            return options.params?.[segment.slice(4, -1)]?.join('/') || segment;
+        }
+        else if (segment.startsWith('[')) {
+            return options.params?.[segment.slice(1, -1)] || segment;
+        }
+        else {
+            return segment;
+        }
+    })
+        .join('/');
+}
+exports.getSingularId = getSingularId;
 //# sourceMappingURL=useScreens.js.map

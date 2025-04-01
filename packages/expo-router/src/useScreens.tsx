@@ -1,3 +1,5 @@
+'use client';
+
 import type {
   EventMapBase,
   NavigationState,
@@ -8,16 +10,10 @@ import type {
 } from '@react-navigation/native';
 import React from 'react';
 
-import {
-  DynamicConvention,
-  LoadedRoute,
-  Route,
-  RouteNode,
-  sortRoutesWithInitial,
-  useRouteNode,
-} from './Route';
+import { LoadedRoute, Route, RouteNode, sortRoutesWithInitial, useRouteNode } from './Route';
 import EXPO_ROUTER_IMPORT_MODE from './import-mode';
 import { Screen } from './primitives';
+import { UnknownOutputParams } from './types';
 import { EmptyRoute } from './views/EmptyRoute';
 import { SuspenseFallback } from './views/SuspenseFallback';
 import { Try } from './views/Try';
@@ -47,7 +43,13 @@ export type ScreenProps<
       }) => ScreenListeners<TState, TEventMap>);
 
   getId?: ({ params }: { params?: Record<string, any> }) => string | undefined;
+
+  dangerouslySingular?: SingularOptions;
 };
+
+export type SingularOptions =
+  | boolean
+  | ((name: string, params: UnknownOutputParams) => string | undefined);
 
 function getSortedChildren(
   children: RouteNode[],
@@ -62,37 +64,69 @@ function getSortedChildren(
   const entries = [...children];
 
   const ordered = order
-    .map(({ name, redirect, initialParams, listeners, options, getId }) => {
-      if (!entries.length) {
-        console.warn(`[Layout children]: Too many screens defined. Route "${name}" is extraneous.`);
-        return null;
-      }
-      const matchIndex = entries.findIndex((child) => child.route === name);
-      if (matchIndex === -1) {
-        console.warn(
-          `[Layout children]: No route named "${name}" exists in nested children:`,
-          children.map(({ route }) => route)
-        );
-        return null;
-      } else {
-        // Get match and remove from entries
-        const match = entries[matchIndex];
-        entries.splice(matchIndex, 1);
-
-        // Ensure to return null after removing from entries.
-        if (redirect) {
-          if (typeof redirect === 'string') {
-            throw new Error(`Redirecting to a specific route is not supported yet.`);
-          }
+    .map(
+      ({
+        name,
+        redirect,
+        initialParams,
+        listeners,
+        options,
+        getId,
+        dangerouslySingular: singular,
+      }) => {
+        if (!entries.length) {
+          console.warn(
+            `[Layout children]: Too many screens defined. Route "${name}" is extraneous.`
+          );
           return null;
         }
+        const matchIndex = entries.findIndex((child) => child.route === name);
+        if (matchIndex === -1) {
+          console.warn(
+            `[Layout children]: No route named "${name}" exists in nested children:`,
+            children.map(({ route }) => route)
+          );
+          return null;
+        } else {
+          // Get match and remove from entries
+          const match = entries[matchIndex];
+          entries.splice(matchIndex, 1);
 
-        return {
-          route: match,
-          props: { initialParams, listeners, options, getId },
-        };
+          // Ensure to return null after removing from entries.
+          if (redirect) {
+            if (typeof redirect === 'string') {
+              throw new Error(`Redirecting to a specific route is not supported yet.`);
+            }
+            return null;
+          }
+
+          if (getId) {
+            console.warn(
+              `Deprecated: prop 'getId' on screen ${name} is deprecated. Please rename the prop to 'dangerouslySingular'`
+            );
+            if (singular) {
+              console.warn(
+                `Screen ${name} cannot use both getId and dangerouslySingular together.`
+              );
+            }
+          } else if (singular) {
+            // If singular is set, use it as the getId function.
+            if (typeof singular === 'string') {
+              getId = () => singular;
+            } else if (typeof singular === 'function' && name) {
+              getId = (options) => singular(name, options.params || {});
+            } else if (singular === true && name) {
+              getId = (options) => getSingularId(name, options);
+            }
+          }
+
+          return {
+            route: match,
+            props: { initialParams, listeners, options, getId },
+          };
+        }
       }
-    })
+    )
     .filter(Boolean) as {
     route: RouteNode;
     props: Partial<ScreenProps>;
@@ -225,44 +259,10 @@ export function getQualifiedRouteComponent(value: RouteNode) {
   return QualifiedRoute;
 }
 
-/** @returns a function which provides a screen id that matches the dynamic route name in params. */
-export function createGetIdForRoute(
-  route: Pick<RouteNode, 'dynamic' | 'route' | 'contextKey' | 'children'>
-) {
-  const include = new Map<string, DynamicConvention>();
-
-  if (route.dynamic) {
-    for (const segment of route.dynamic) {
-      include.set(segment.name, segment);
-    }
-  }
-
-  return ({ params = {} } = {} as { params?: Record<string, any> }) => {
-    const segments: string[] = [];
-
-    for (const dynamic of include.values()) {
-      const value = params?.[dynamic.name];
-      if (Array.isArray(value) && value.length > 0) {
-        // If we are an array with a value
-        segments.push(value.join('/'));
-      } else if (value && !Array.isArray(value)) {
-        // If we have a value and not an empty array
-        segments.push(value);
-      } else if (dynamic.deep) {
-        segments.push(`[...${dynamic.name}]`);
-      } else {
-        segments.push(`[${dynamic.name}]`);
-      }
-    }
-
-    return segments.join('/') ?? route.contextKey;
-  };
-}
-
 export function screenOptionsFactory(
   route: RouteNode,
   options?: ScreenProps['options']
-): RouteConfig<any, any, any, any, any>['options'] {
+): RouteConfig<any, any, any, any, any, any>['options'] {
   return (args) => {
     // Only eager load generated components
     const staticOptions = route.generated ? route.loadRoute()?.getNavOptions : null;
@@ -275,6 +275,7 @@ export function screenOptionsFactory(
 
     // Prevent generated screens from showing up in the tab bar.
     if (route.generated) {
+      output.tabBarItemStyle = { display: 'none' };
       output.tabBarButton = () => null;
       // TODO: React Navigation doesn't provide a way to prevent rendering the drawer item.
       output.drawerItemStyle = { height: 0, display: 'none' };
@@ -284,16 +285,36 @@ export function screenOptionsFactory(
   };
 }
 
-export function routeToScreen(route: RouteNode, { options, ...props }: Partial<ScreenProps> = {}) {
+export function routeToScreen(
+  route: RouteNode,
+  { options, getId, ...props }: Partial<ScreenProps> = {}
+) {
   return (
     <Screen
-      // Users can override the screen getId function.
-      getId={createGetIdForRoute(route)}
       {...props}
       name={route.route}
       key={route.route}
+      getId={getId}
       options={screenOptionsFactory(route, options)}
       getComponent={() => getQualifiedRouteComponent(route)}
     />
   );
+}
+
+export function getSingularId(
+  name: string,
+  options: { params?: Record<string, any> | undefined } = {}
+) {
+  return name
+    .split('/')
+    .map((segment) => {
+      if (segment.startsWith('[...')) {
+        return options.params?.[segment.slice(4, -1)]?.join('/') || segment;
+      } else if (segment.startsWith('[')) {
+        return options.params?.[segment.slice(1, -1)] || segment;
+      } else {
+        return segment;
+      }
+    })
+    .join('/');
 }

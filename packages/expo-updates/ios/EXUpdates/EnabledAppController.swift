@@ -1,7 +1,5 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
-// swiftlint:disable force_unwrapping
-
 import SwiftUI
 import ExpoModulesCore
 
@@ -9,8 +7,6 @@ import ExpoModulesCore
  * Updates controller for applications that have updates enabled and properly-configured.
  */
 public class EnabledAppController: InternalAppControllerInterface, StartupProcedureDelegate {
-  private static let ErrorDomain = "EXUpdatesAppController"
-
   public weak var delegate: AppControllerDelegate?
 
   internal let config: UpdatesConfig
@@ -58,7 +54,7 @@ public class EnabledAppController: InternalAppControllerInterface, StartupProced
     )
     self.logger.info(message: "AppController sharedInstance created")
     self.eventManager = QueueUpdatesEventManager(logger: logger)
-    self.stateMachine = UpdatesStateMachine(eventManager: self.eventManager, validUpdatesStateValues: Set(UpdatesStateValue.allCases))
+    self.stateMachine = UpdatesStateMachine(logger: self.logger, eventManager: self.eventManager, validUpdatesStateValues: Set(UpdatesStateValue.allCases))
   }
 
   public func start() {
@@ -69,7 +65,7 @@ public class EnabledAppController: InternalAppControllerInterface, StartupProced
 
     purgeUpdatesLogsOlderThanOneDay()
 
-    UpdatesBuildData.ensureBuildDataIsConsistentAsync(database: database, config: config)
+    UpdatesBuildData.ensureBuildDataIsConsistentAsync(database: database, config: config, logger: logger)
 
     startupProcedure = StartupProcedure(
       database: self.database,
@@ -83,43 +79,8 @@ public class EnabledAppController: InternalAppControllerInterface, StartupProced
     stateMachine.queueExecution(stateMachineProcedure: startupProcedure)
   }
 
-  /**
-   Starts the update process to launch a previously-loaded update and (if configured to do so)
-   check for a new update from the server. This method should be called as early as possible in
-   the application's lifecycle.
-
-   Note that iOS may stop showing the app's splash screen in case the update is taking a while
-   to load. This method will attempt to find `LaunchScreen.xib` and load it into view while the
-   update is loading.
-   */
-  public func startAndShowLaunchScreen(_ window: UIWindow) {
-    var view: UIView?
-    let mainBundle = Bundle.main
-    let launchScreen = mainBundle.object(forInfoDictionaryKey: "UILaunchStoryboardName") as? String ?? "LaunchScreen"
-
-    if mainBundle.path(forResource: launchScreen, ofType: "nib") != nil {
-      let views = mainBundle.loadNibNamed(launchScreen, owner: self)
-      view = views?.first as? UIView
-      view?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-    } else if mainBundle.path(forResource: launchScreen, ofType: "storyboard") != nil ||
-      mainBundle.path(forResource: launchScreen, ofType: "storyboardc") != nil {
-      let launchScreenStoryboard = UIStoryboard(name: launchScreen, bundle: nil)
-      let viewController = launchScreenStoryboard.instantiateInitialViewController()
-      view = viewController?.view
-      viewController?.view = nil
-    } else {
-      NSLog("Launch screen could not be loaded from a .xib or .storyboard. Unexpected loading behavior may occur.")
-      view = UIView()
-      view?.backgroundColor = .white
-    }
-
-    if window.rootViewController == nil {
-      window.rootViewController = UIViewController()
-    }
-    window.rootViewController!.view = view
-    window.makeKeyAndVisible()
-
-    start()
+  public func onEventListenerStartObserving() {
+    stateMachine.sendContextToJS()
   }
 
   // MARK: - StartupProcedureDelegate
@@ -192,7 +153,7 @@ public class EnabledAppController: InternalAppControllerInterface, StartupProced
   // MARK: - Internal
 
   private func purgeUpdatesLogsOlderThanOneDay() {
-    UpdatesUtils.purgeUpdatesLogsOlderThanOneDay()
+    UpdatesUtils.purgeUpdatesLogsOlderThanOneDay(logger: logger)
   }
 
   // MARK: - JS API
@@ -286,6 +247,11 @@ public class EnabledAppController: InternalAppControllerInterface, StartupProced
   public func getEmbeddedUpdate() -> Update? {
     return EmbeddedAppLoader.embeddedManifest(withConfig: self.config, database: self.database)
   }
-}
 
-// swiftlint:enable force_unwrapping
+  public func setUpdateURLAndRequestHeadersOverride(_ configOverride: UpdatesConfigOverride?) throws {
+    if !config.disableAntiBrickingMeasures {
+      throw NotAllowedAntiBrickingMeasuresException()
+    }
+    UpdatesConfigOverride.save(configOverride)
+  }
+}

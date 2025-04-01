@@ -42,9 +42,9 @@ type InferEventParameter<
  * import { VideoPlayer } from 'expo-video';
  *
  * export function PlayerStatus({ videoPlayer }: { videoPlayer: VideoPlayer }) {
- *   const playerStatus = useEvent(videoPlayer, 'statusChange', videoPlayer.status);
+ *   const { status } = useEvent(videoPlayer, 'statusChange', { status: videoPlayer.status });
  *
- *   return <Text>{`Player status: ${playerStatus}`}</Text>;
+ *   return <Text>{`Player status: ${status}`}</Text>;
  * }
  * ```
  */
@@ -82,7 +82,7 @@ export function useEvent<
  * export function VideoPlayerView() {
  *   const player = useVideoPlayer(videoSource);
  *
- *   useEventListener(player, 'playingChange', isPlaying => {
+ *   useEventListener(player, 'playingChange', ({ isPlaying }) => {
  *     console.log('Player is playing:', isPlaying);
  *   });
  *
@@ -101,7 +101,7 @@ export function useEventListener<
   listenerRef.current = listener;
 
   useEffect(() => {
-    const callback = (...args) => listenerRef.current(...args);
+    const callback = (...args: any[]) => listenerRef.current(...args);
     const subscription = eventEmitter.addListener<TEventName>(
       eventName,
       callback as TEventsMap[TEventName]

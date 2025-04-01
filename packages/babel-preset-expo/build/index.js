@@ -78,9 +78,8 @@ function babelPresetExpo(api, options = {}) {
         extraPlugins.push([
             require('babel-plugin-react-compiler'),
             {
-                runtimeModule: 'babel-preset-expo/react-compiler-runtime.js',
-                // enableUseMemoCachePolyfill: true,
-                // compilationMode: 'infer',
+                // TODO: Update when we bump React to 19.
+                target: '18',
                 environment: {
                     enableResetCacheOnSourceFileChanges: !isProduction,
                     ...(platformOptions['react-compiler']?.environment ?? {}),
@@ -248,7 +247,10 @@ function babelPresetExpo(api, options = {}) {
         plugins: [
             ...extraPlugins,
             // TODO: Remove
-            [require('@babel/plugin-proposal-decorators'), { legacy: true }],
+            platformOptions.decorators !== false && [
+                require('@babel/plugin-proposal-decorators'),
+                platformOptions.decorators ?? { legacy: true },
+            ],
             require('@babel/plugin-transform-export-namespace-from'),
             // Automatically add `react-native-reanimated/plugin` when the package is installed.
             // TODO: Move to be a customTransformOption.

@@ -1,13 +1,12 @@
 /* eslint-env jest */
-import execa from 'execa';
-import fs from 'fs-extra';
-import klawSync from 'klaw-sync';
+import fs from 'fs';
 import path from 'path';
 
 import { runExportSideEffects } from './export-side-effects';
+import { executeExpoAsync } from '../../utils/expo';
 import {
-  bin,
   expectChunkPathMatching,
+  findProjectFiles,
   getHtmlHelpers,
   getPageHtml,
   getRouterE2ERoot,
@@ -20,40 +19,25 @@ describe('exports static with bundle splitting', () => {
   const outputName = 'dist-static-splitting';
   const outputDir = path.join(projectRoot, outputName);
 
-  beforeAll(
-    async () => {
-      // NODE_ENV=production EXPO_USE_STATIC=static E2E_ROUTER_SRC=static-rendering E2E_ROUTER_ASYNC=production EXPO_USE_FAST_RESOLVER=1 npx expo export -p web --source-maps --output-dir dist-static-splitting
-      await execa(
-        'node',
-        [bin, 'export', '-p', 'web', '--source-maps', '--output-dir', outputName],
-        {
-          cwd: projectRoot,
-          env: {
-            NODE_ENV: 'production',
-            EXPO_USE_STATIC: 'static',
-            E2E_ROUTER_SRC: 'static-rendering',
-            E2E_ROUTER_ASYNC: 'production',
-            EXPO_USE_FAST_RESOLVER: 'true',
-          },
-        }
-      );
-    },
-    // Could take 45s depending on how fast the bundler resolves
-    560 * 1000
-  );
+  beforeAll(async () => {
+    // NODE_ENV=production EXPO_USE_STATIC=static E2E_ROUTER_SRC=static-rendering E2E_ROUTER_ASYNC=production EXPO_USE_FAST_RESOLVER=1 npx expo export -p web --source-maps --output-dir dist-static-splitting
+    await executeExpoAsync(
+      projectRoot,
+      ['export', '-p', 'web', '--source-maps', '--output-dir', outputName],
+      {
+        env: {
+          NODE_ENV: 'production',
+          EXPO_USE_STATIC: 'static',
+          E2E_ROUTER_SRC: 'static-rendering',
+          E2E_ROUTER_ASYNC: 'production',
+          EXPO_USE_FAST_RESOLVER: 'true',
+        },
+      }
+    );
+  });
 
   it('has expected files', async () => {
-    // List output files with sizes for snapshotting.
-    // This is to make sure that any changes to the output are intentional.
-    // Posix path formatting is used to make paths the same across OSes.
-    const files = klawSync(outputDir)
-      .map((entry) => {
-        if (entry.path.includes('node_modules') || !entry.stats.isFile()) {
-          return null;
-        }
-        return path.posix.relative(outputDir, entry.path);
-      })
-      .filter(Boolean);
+    const files = findProjectFiles(outputDir);
 
     // The wrapper should not be included as a route.
     expect(files).not.toContain('+html.html');
@@ -79,36 +63,25 @@ describe('exports static with bundle splitting', () => {
   // Ensure the correct script tags are injected.
   it('has eager script tags in html', async () => {
     expect(await getScriptTagsAsync('index.html')).toEqual(
-      ['index', '_layout', 'index'].map(expectChunkPathMatching)
+      ['entry', '_layout', 'index'].map(expectChunkPathMatching)
     );
   });
   it('has eager script tags in dynamic html', async () => {
     const staticParamsPage = await getScriptTagsAsync('welcome-to-the-universe.html');
 
-    expect(staticParamsPage).toEqual(['index', '[post]', '_layout'].map(expectChunkPathMatching));
+    expect(staticParamsPage).toEqual(['entry', '[post]', '_layout'].map(expectChunkPathMatching));
 
     expect(await getScriptTagsAsync('[post].html')).toEqual(staticParamsPage);
   });
   it('has (fewer) eager script tags in generated routes', async () => {
     // Less chunks because the not-found route is not an async import.
     expect(await getScriptTagsAsync('+not-found.html')).toEqual(
-      ['index', '_layout'].map(expectChunkPathMatching)
+      ['entry', '_layout'].map(expectChunkPathMatching)
     );
   });
 
   it('has source maps', async () => {
-    // List output files with sizes for snapshotting.
-    // This is to make sure that any changes to the output are intentional.
-    // Posix path formatting is used to make paths the same across OSes.
-    const files = klawSync(outputDir)
-      .map((entry) => {
-        if (entry.path.includes('node_modules') || !entry.stats.isFile()) {
-          return null;
-        }
-        return path.posix.relative(outputDir, entry.path);
-      })
-      .filter(Boolean);
-
+    const files = findProjectFiles(outputDir);
     const mapFiles = files.filter((file) => file?.endsWith('.map'));
 
     // "_expo/static/js/web/[post]-854b84d726cca00d17047171ff4ef43d.js.map",
@@ -121,7 +94,7 @@ describe('exports static with bundle splitting', () => {
     // "_expo/static/js/web/links-4545c832242c66b83e4bd38b67066808.js.map",
     // "_expo/static/js/web/styled-93437b3b1dcaa498dabb3a1de3aae7ac.js.map",
     expect(mapFiles).toEqual(
-      ['\\[post\\]', '_layout', 'about', 'asset', 'index', 'index', 'links', 'styled'].map((file) =>
+      ['\\[post\\]', '_layout', 'about', 'asset', 'entry', 'index', 'links', 'styled'].map((file) =>
         expect.stringMatching(new RegExp(`_expo\\/static\\/js\\/web\\/${file}-.*\\.js\\.map`))
       )
     );
@@ -149,7 +122,6 @@ describe('exports static with bundle splitting', () => {
       // Ensure the bundle does not contain a source map reference
       const jsBundle = fs.readFileSync(path.join(outputDir, file!), 'utf8');
       expect(jsBundle).toMatch(/^\/\/\# sourceMappingURL=\/_expo\/static\/js\/web\/.*\.js\.map$/gm);
-      // expect(jsBundle).toMatch(/^\/\/\# sourceURL=\/_expo\/static\/js\/web\/index-.*\.js$/gm);
       const mapFile = jsBundle.match(
         /^\/\/\# sourceMappingURL=(\/_expo\/static\/js\/web\/.*\.js\.map)$/m
       )?.[1];
@@ -289,7 +261,7 @@ describe('exports static with bundle splitting', () => {
   });
 
   it('supports usePathname in +html files', async () => {
-    const page = await fs.readFile(path.join(outputDir, 'index.html'), 'utf8');
+    const page = await fs.promises.readFile(path.join(outputDir, 'index.html'), 'utf8');
 
     expect(page).toContain('<meta name="custom-value" content="value"/>');
 

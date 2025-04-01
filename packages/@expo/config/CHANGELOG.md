@@ -4,6 +4,70 @@
 
 ### 🛠 Breaking changes
 
+- Remove getAccountUsername from package exports ([#33249](https://github.com/expo/expo/pull/33249) by [@wschurman](https://github.com/wschurman))
+
+### 🎉 New features
+
+### 🐛 Bug fixes
+
+### 💡 Others
+
+## 10.0.11 - 2025-03-11
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.10 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.9 - 2025-02-10
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.8 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.7 - 2025-01-08
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.6 - 2024-12-05
+
+### 💡 Others
+
+- Drop unintentional `console.log` when modifying config. ([#33330](https://github.com/expo/expo/pull/33330) by [@byCedric](https://github.com/byCedric))
+
+## 10.0.5 — 2024-11-20
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.4 — 2024-11-14
+
+### 🐛 Bug fixes
+
+- Skip modifying the plugins array in app.json when using a dynamic app config as well ([#32882](https://github.com/expo/expo/pull/32882) by [@brentvatne](https://github.com/brentvatne))
+
+## 10.0.3 — 2024-11-11
+
+_This version does not introduce any user-facing changes._
+
+## 10.0.2 — 2024-10-28
+
+### 🐛 Bug fixes
+
+- Properly handle app manifest plugin modifications. ([#32405](https://github.com/expo/expo/pull/32405) by [@byCedric](https://github.com/byCedric))
+
+## 10.0.1 — 2024-10-25
+
+### 💡 Others
+
+- Bump `sucrase@3.34.0` to `sucrase@3.35.0` to to remove transitive dependency on `glob@7` ([#32274](https://github.com/expo/expo/pull/32274) by [@kitten](https://github.com/kitten))
+
+## 10.0.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
 - Change the `config` return type from `AppJSONConfig` to `ExpoConfig` in `modifyConfigAsync`. ([#30783](https://github.com/expo/expo/pull/30783) by [@byCedric](https://github.com/byCedric))
 
 ### 🎉 New features
@@ -17,6 +81,7 @@
 ### 🐛 Bug fixes
 
 - Move entry point path modifications to Node script instead of Gradle plugin. ([#30654](https://github.com/expo/expo/pull/30654) by [@byCedric](https://github.com/byCedric))
+- Enable web as a default platform when `react-dom` is installed. ([#32149](https://github.com/expo/expo/pull/32149) by [@byCedric](https://github.com/byCedric))
 
 ### 💡 Others
 

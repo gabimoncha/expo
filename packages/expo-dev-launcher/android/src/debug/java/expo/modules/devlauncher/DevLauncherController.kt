@@ -85,7 +85,7 @@ class DevLauncherController private constructor() :
   override val devClientHost by lazy {
     ReactHostWrapper(
       reactNativeHost = DevLauncherReactNativeHost(context as Application, DEV_LAUNCHER_HOST),
-      reactHost = DevLauncherReactHost.create(context as Application, DEV_LAUNCHER_HOST)
+      reactHostProvider = { DevLauncherReactHost.create(context as Application, DEV_LAUNCHER_HOST) }
     )
   }
 
@@ -107,8 +107,7 @@ class DevLauncherController private constructor() :
 
   private var appIsLoading = false
 
-  @Suppress("unused")
-  private val networkInterceptor = DevLauncherNetworkInterceptor(this)
+  private var networkInterceptor: DevLauncherNetworkInterceptor? = null
 
   private fun isEASUpdateURL(url: Uri): Boolean {
     return url.host.equals("u.expo.dev") || url.host.equals("staging-u.expo.dev")
@@ -149,7 +148,7 @@ class DevLauncherController private constructor() :
       val manifestParser = DevLauncherManifestParser(httpClient, parsedUrl, installationIDHelper.getOrCreateInstallationID(context))
       val appIntent = createAppIntent()
 
-      internalUpdatesInterface?.reset()
+      DevLauncherKoinContext.app.koin.getOrNull<UpdatesInterface>()?.reset()
 
       val appLoaderFactory = get<DevLauncherAppLoaderFactoryInterface>()
       val appLoader = appLoaderFactory.createAppLoader(parsedUrl, parsedProjectUrl, manifestParser)
@@ -191,6 +190,11 @@ class DevLauncherController private constructor() :
   override fun onAppLoaded(context: ReactContext) {
     synchronized(this) {
       appIsLoading = false
+    }
+    manifestURL?.let {
+      runBlockingOnMainThread {
+        networkInterceptor = DevLauncherNetworkInterceptor(it)
+      }
     }
   }
 
@@ -287,6 +291,8 @@ class DevLauncherController private constructor() :
   private fun ensureHostWasCleared(host: ReactHostWrapper, activityToBeInvalidated: ReactActivity? = null) {
     if (host.hasInstance) {
       runBlockingOnMainThread {
+        networkInterceptor?.close()
+        networkInterceptor = null
         clearHost(host, activityToBeInvalidated)
       }
     }
@@ -429,7 +435,7 @@ class DevLauncherController private constructor() :
 
     @JvmStatic
     fun initialize(reactApplication: ReactApplication, additionalPackages: List<ReactPackage>? = null, launcherClass: Class<*>? = null) {
-      initialize(reactApplication as Context, ReactHostWrapper(reactApplication.reactNativeHost, reactApplication.reactHost))
+      initialize(reactApplication as Context, ReactHostWrapper(reactApplication.reactNativeHost, { reactApplication.reactHost }))
       sAdditionalPackages = additionalPackages
       sLauncherClass = launcherClass
     }

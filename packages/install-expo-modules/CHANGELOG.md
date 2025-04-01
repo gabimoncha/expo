@@ -4,11 +4,46 @@
 
 ### 🛠 Breaking changes
 
+### 🎉 New features
+
+### 🐛 Bug fixes
+
+### 💡 Others
+
+## 0.11.6 - 2025-03-31
+
+_This version does not introduce any user-facing changes._
+
+## 0.11.5 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 0.11.4 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 0.11.3 - 2025-01-08
+
+_This version does not introduce any user-facing changes._
+
+## 0.11.2 — 2024-11-20
+
+_This version does not introduce any user-facing changes._
+
+## 0.11.1 — 2024-11-14
+
+_This version does not introduce any user-facing changes._
+
+## 0.11.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
 - Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
 
 ### 🎉 New features
 
 - Added support for Babel config files other than `babel.config.js` when upgrading plain React Native project. ([#30356](https://github.com/expo/expo/pull/30356) by [@wojtekmaj](https://github.com/wojtekmaj))
+- Added react-native 0.76 support. ([#32141](https://github.com/expo/expo/pull/32141) by [@kudo](https://github.com/kudo))
 
 ### 🐛 Bug fixes
 

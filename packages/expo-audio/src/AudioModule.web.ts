@@ -10,7 +10,9 @@ import {
   RecordingOptions,
 } from './Audio.types';
 import { AudioPlayer, AudioEvents, RecordingEvents, AudioRecorder } from './AudioModule.types';
+import { PLAYBACK_STATUS_UPDATE, RECORDING_STATUS_UPDATE } from './ExpoAudio';
 import { RecordingPresets } from './RecordingConstants';
+import resolveAssetSource from './utils/resolveAssetSource';
 
 const nextId = (() => {
   let id = 0;
@@ -76,12 +78,13 @@ function getStatusFromMedia(media: HTMLMediaElement, id: number): AudioStatus {
   const status: AudioStatus = {
     id,
     isLoaded: true,
-    duration: media.duration * 1000,
-    currentTime: media.currentTime * 1000,
+    duration: media.duration,
+    currentTime: media.currentTime,
     playbackState: '',
     timeControlStatus: isPlaying ? 'playing' : 'paused',
     reasonForWaitingToPlay: '',
     playing: isPlaying,
+    didJustFinish: media.ended,
     isBuffering: false,
     playbackRate: media.playbackRate,
     shouldCorrectPitch: false,
@@ -135,11 +138,11 @@ export class AudioPlayerWeb
   }
 
   get duration(): number {
-    return this.media.duration * 1000;
+    return this.media.duration;
   }
 
   get currentTime(): number {
-    return this.media.currentTime * 1000;
+    return this.media.currentTime;
   }
 
   get paused(): boolean {
@@ -180,8 +183,13 @@ export class AudioPlayerWeb
     this.isPlaying = false;
   }
 
+  replace(source: AudioSource): void {
+    this.src = source;
+    this.media = this._createMediaElement();
+  }
+
   async seekTo(seconds: number): Promise<void> {
-    this.media.currentTime = seconds / 1000;
+    this.media.currentTime = seconds;
   }
 
   // Not supported on web
@@ -203,16 +211,16 @@ export class AudioPlayerWeb
   }
 
   _createMediaElement(): HTMLAudioElement {
-    const newSource = typeof this.src === 'string' ? this.src : (this.src?.uri ?? '');
+    const newSource = getSourceUri(this.src);
     const media = new Audio(newSource);
 
     media.ontimeupdate = () => {
-      this.emit('onPlaybackStatusUpdate', getStatusFromMedia(media, this.id));
+      this.emit(PLAYBACK_STATUS_UPDATE, getStatusFromMedia(media, this.id));
     };
 
     media.onloadeddata = () => {
       this.loaded = true;
-      this.emit('onPlaybackStatusUpdate', {
+      this.emit(PLAYBACK_STATUS_UPDATE, {
         ...getStatusFromMedia(media, this.id),
         isLoaded: this.loaded,
       });
@@ -220,6 +228,20 @@ export class AudioPlayerWeb
 
     return media;
   }
+}
+
+function getSourceUri(source: AudioSource): string | undefined {
+  if (typeof source === 'string') {
+    return source;
+  }
+  if (typeof source === 'number') {
+    return resolveAssetSource(source)?.uri ?? undefined;
+  }
+  if (typeof source?.assetId === 'number' && !source?.uri) {
+    return resolveAssetSource(source.assetId)?.uri ?? undefined;
+  }
+
+  return source?.uri ?? undefined;
 }
 
 export class AudioRecorderWeb
@@ -338,7 +360,7 @@ export class AudioRecorderWeb
 
     this.uri = url;
 
-    this.emit('onRecordingStatusUpdate', {
+    this.emit(RECORDING_STATUS_UPDATE, {
       id: this.id,
       isFinished: true,
       hasError: false,

@@ -1,6 +1,4 @@
-import { PlatformTag } from '~/ui/components/Tag';
-import { FOOTNOTE } from '~/ui/components/Text';
-import * as Tooltip from '~/ui/components/Tooltip';
+import { PlatformTag } from '~/ui/components/Tag/PlatformTag';
 
 type Props = {
   platforms: string[];
@@ -8,28 +6,12 @@ type Props = {
 
 export function PagePlatformTags({ platforms }: Props) {
   return (
-    <div className="inline-flex mt-3 flex-wrap gap-y-1.5">
+    <div className="mt-3 inline-flex flex-wrap">
       {platforms
         .sort((a, b) => a.localeCompare(b))
         .map(platform => {
-          if (platform.includes('*')) {
-            return (
-              <Tooltip.Root key={platform}>
-                <Tooltip.Trigger className="cursor-default">
-                  <PlatformTag platform={platform} className="!rounded-full !px-2.5" />
-                </Tooltip.Trigger>
-                <Tooltip.Content side="bottom">
-                  {platform.startsWith('android') && (
-                    <FOOTNOTE>Android Emulator not supported</FOOTNOTE>
-                  )}
-                  {platform.startsWith('ios') && <FOOTNOTE>iOS Simulator not supported</FOOTNOTE>}
-                </Tooltip.Content>
-              </Tooltip.Root>
-            );
-          }
-          return (
-            <PlatformTag platform={platform} key={platform} className="!rounded-full !px-2.5" />
-          );
+          const text = platform.includes('*') ? platform.replace('*', ' (device only)') : platform;
+          return <PlatformTag platform={text} key={text} className="rounded-full px-2.5 py-1.5" />;
         })}
     </div>
   );

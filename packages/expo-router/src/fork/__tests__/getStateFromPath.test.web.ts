@@ -1,9 +1,7 @@
 import { getMockConfig } from '../../testing-library';
-import getPathFromState from '../getPathFromState';
-import getStateFromPath, {
-  stripBaseUrl,
-  getUrlWithReactNavigationConcessions,
-} from '../getStateFromPath';
+import { getPathFromState } from '../getPathFromState';
+import { getStateFromPath } from '../getStateFromPath';
+import { getUrlWithReactNavigationConcessions, stripBaseUrl } from '../getStateFromPath-forks';
 
 beforeEach(() => {
   delete process.env.EXPO_BASE_URL;
@@ -48,7 +46,19 @@ describe('baseUrl', () => {
     const config = getMockConfig(['_layout.tsx', 'bar.tsx', 'index.tsx']);
 
     expect(getStateFromPath<object>(path, config)).toEqual({
-      routes: [{ name: 'bar', path: '/bar' }],
+      routes: [
+        {
+          name: '__root',
+          state: {
+            routes: [
+              {
+                name: 'bar',
+                path: '/bar',
+              },
+            ],
+          },
+        },
+      ],
     });
 
     expect(getPathFromState(getStateFromPath<object>(path, config)!, config)).toBe(
@@ -62,7 +72,19 @@ describe('baseUrl', () => {
     const config = getMockConfig(['_layout.tsx', 'bar.tsx', 'index.tsx']);
 
     expect(getStateFromPath<object>(path, config)).toEqual({
-      routes: [{ name: 'bar', path: '/bar' }],
+      routes: [
+        {
+          name: '__root',
+          state: {
+            routes: [
+              {
+                name: 'bar',
+                path: '/bar',
+              },
+            ],
+          },
+        },
+      ],
     });
     expect(getPathFromState(getStateFromPath<object>(path, config)!, config)).toBe('/expo/bar');
   });
@@ -102,39 +124,74 @@ describe(getUrlWithReactNavigationConcessions, () => {
   });
 });
 
-it(`parses hashes`, () => {
-  expect(
-    getStateFromPath('/hello#123', {
-      screens: {
-        hello: 'hello',
-      },
-    } as any)
-  ).toEqual({
-    routes: [
-      {
-        name: 'hello',
-        path: '/hello',
-        params: {
-          '#': '123',
-        },
-      },
-    ],
-  });
-
-  expect(getStateFromPath('/hello#123', getMockConfig(['[hello]']))).toEqual({
-    routes: [
-      {
-        name: '[hello]',
-        params: {
+describe('hash', () => {
+  it(`parses hashes`, () => {
+    expect(
+      getStateFromPath('/hello#123', {
+        screens: {
           hello: 'hello',
-          '#': '123',
         },
-        path: '/hello',
-      },
-    ],
+      } as any)
+    ).toEqual({
+      routes: [
+        {
+          name: 'hello',
+          path: '/hello#123',
+          params: {
+            '#': '123',
+          },
+        },
+      ],
+    });
   });
 
-  // TODO: Test rest params
+  it('parses hashes with dynamic routes', () => {
+    expect(getStateFromPath('/hello#123', getMockConfig(['[hello]']))).toEqual({
+      routes: [
+        {
+          name: '__root',
+          params: {
+            hello: 'hello',
+          },
+          state: {
+            routes: [
+              {
+                name: '[hello]',
+                params: {
+                  '#': '123',
+                  hello: 'hello',
+                },
+                path: '/hello#123',
+              },
+            ],
+          },
+        },
+      ],
+    });
+  });
+
+  it('parses hashes with query params', () => {
+    expect(getStateFromPath('/?#123', getMockConfig(['index']))).toEqual({
+      routes: [
+        {
+          name: '__root',
+          state: {
+            routes: [
+              {
+                name: 'index',
+                params: {
+                  '#': '123',
+                },
+                path: '/?#123',
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    // TODO: Test rest params
+  });
 });
 
 it(`supports spaces`, () => {
@@ -156,11 +213,21 @@ it(`supports spaces`, () => {
   expect(getStateFromPath('/hello%20world', getMockConfig(['[hello world]']))).toEqual({
     routes: [
       {
-        name: '[hello world]',
+        name: '__root',
         params: {
-          'hello world': 'hello%20world',
+          'hello world': 'hello world',
         },
-        path: '/hello%20world',
+        state: {
+          routes: [
+            {
+              name: '[hello world]',
+              params: {
+                'hello world': 'hello world',
+              },
+              path: '/hello%20world',
+            },
+          ],
+        },
       },
     ],
   });
@@ -193,19 +260,35 @@ it(`matches against dynamic groups`, () => {
   ).toEqual({
     routes: [
       {
-        name: '(app)',
-        params: { user: '(explore)' },
+        name: '__root',
+        params: {
+          user: '(explore)',
+        },
         state: {
           routes: [
             {
-              name: '([user])',
-              params: { user: '(explore)' },
+              name: '(app)',
+              params: {
+                user: '(explore)',
+              },
               state: {
                 routes: [
                   {
-                    name: '[user]/index',
-                    params: { user: '(explore)' },
-                    path: '',
+                    name: '([user])',
+                    params: {
+                      user: '(explore)',
+                    },
+                    state: {
+                      routes: [
+                        {
+                          name: '[user]/index',
+                          params: {
+                            user: '(explore)',
+                          },
+                          path: '',
+                        },
+                      ],
+                    },
                   },
                 ],
               },
@@ -233,27 +316,47 @@ it(`adds dynamic route params from all levels of the path`, () => {
   ).toEqual({
     routes: [
       {
-        name: '[foo]',
-        params: { baz: 'baz', foo: 'foo' },
+        name: '__root',
+        params: {
+          baz: 'baz',
+          foo: 'foo',
+        },
         state: {
           routes: [
             {
-              name: 'bar',
-              params: { baz: 'baz', foo: 'foo' },
+              name: '[foo]',
+              params: {
+                baz: 'baz',
+                foo: 'foo',
+              },
               state: {
                 routes: [
                   {
-                    name: '[baz]',
-                    params: { baz: 'baz', foo: 'foo' },
+                    name: 'bar',
+                    params: {
+                      baz: 'baz',
+                      foo: 'foo',
+                    },
                     state: {
                       routes: [
                         {
-                          name: 'other',
+                          name: '[baz]',
                           params: {
                             baz: 'baz',
                             foo: 'foo',
                           },
-                          path: '/foo/bar/baz/other',
+                          state: {
+                            routes: [
+                              {
+                                name: 'other',
+                                params: {
+                                  baz: 'baz',
+                                  foo: 'foo',
+                                },
+                                path: '/foo/bar/baz/other',
+                              },
+                            ],
+                          },
                         },
                       ],
                     },
@@ -268,19 +371,25 @@ it(`adds dynamic route params from all levels of the path`, () => {
   });
 });
 
-it(`handles query params`, () => {
-  expect(
-    getStateFromPath('/?test=true&hello=world&array=1&array=2', getMockConfig(['index.tsx']))
-  ).toEqual({
+it(`handles not-found routes`, () => {
+  expect(getStateFromPath('/missing-page', getMockConfig(['+not-found', 'index']))).toEqual({
     routes: [
       {
-        name: 'index',
+        name: '__root',
         params: {
-          test: 'true',
-          hello: 'world',
-          array: ['1', '2'],
+          'not-found': ['missing-page'],
         },
-        path: '/?test=true&hello=world&array=1&array=2',
+        state: {
+          routes: [
+            {
+              name: '+not-found',
+              params: {
+                'not-found': ['missing-page'],
+              },
+              path: '/missing-page',
+            },
+          ],
+        },
       },
     ],
   });
@@ -292,13 +401,45 @@ it(`handles query params`, () => {
   ).toEqual({
     routes: [
       {
-        name: 'index',
-        params: {
-          test: 'true',
-          hello: 'world',
-          array: ['1', '2'],
+        name: '__root',
+        state: {
+          routes: [
+            {
+              name: 'index',
+              params: {
+                array: ['1', '2'],
+                hello: 'world',
+                test: 'true',
+              },
+              path: '/?test=true&hello=world&array=1&array=2',
+            },
+          ],
         },
-        path: '/?test=true&hello=world&array=1&array=2',
+      },
+    ],
+  });
+});
+
+it(`handles query params`, () => {
+  expect(
+    getStateFromPath('/?test=true&hello=world&array=1&array=2', getMockConfig(['index.tsx']))
+  ).toEqual({
+    routes: [
+      {
+        name: '__root',
+        state: {
+          routes: [
+            {
+              name: 'index',
+              params: {
+                array: ['1', '2'],
+                hello: 'world',
+                test: 'true',
+              },
+              path: '/?test=true&hello=world&array=1&array=2',
+            },
+          ],
+        },
       },
     ],
   });
@@ -310,8 +451,15 @@ it(`prioritizes hoisted index routes over dynamic groups`, () => {
   ).toEqual({
     routes: [
       {
-        name: '(one)/index',
-        path: '',
+        name: '__root',
+        state: {
+          routes: [
+            {
+              name: '(one)/index',
+              path: '',
+            },
+          ],
+        },
       },
     ],
   });

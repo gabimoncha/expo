@@ -1,7 +1,7 @@
 import { MetroConfig } from '@expo/metro-config';
 import crypto from 'crypto';
 import type { Module } from 'metro';
-import { getJsOutput, isJsModule } from 'metro/src/DeltaBundler/Serializers/helpers/js';
+import { getJsOutput, isJsModule } from 'metro/src/DeltaBundler/Serializers/helpers/js.js';
 import type { ReadOnlyDependencies } from 'metro/src/DeltaBundler/types';
 import type IncrementalBundler from 'metro/src/IncrementalBundler';
 import splitBundleOptions from 'metro/src/lib/splitBundleOptions';
@@ -50,7 +50,7 @@ export async function getCssModulesFromBundler(
     [entryFile],
     transformOptions,
     resolverOptions,
-    { onProgress, shallow: false }
+    { onProgress, shallow: false, lazy: false }
   );
 
   return getCssModules(dependencies, {

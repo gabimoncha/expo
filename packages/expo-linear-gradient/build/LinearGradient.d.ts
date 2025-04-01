@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { ViewProps } from 'react-native';
+import { Component } from 'react';
+import { ColorValue, ViewProps } from 'react-native';
 import { NativeLinearGradientPoint } from './NativeLinearGradient.types';
 /**
  * An object `{ x: number; y: number }` or array `[x, y]` that represents the point
@@ -23,7 +23,7 @@ export type LinearGradientProps = ViewProps & {
      *
      * For TypeScript to know the provided array has 2 or more values, it should be provided "inline" or typed `as const`.
      */
-    colors: readonly [string, string, ...string[]];
+    colors: readonly [ColorValue, ColorValue, ...ColorValue[]];
     /**
      * A readonly array that contains `number`s ranging from `0` to `1`, inclusive, and is the same length as the `colors` property.
      * Each number indicates a color-stop location where each respective color should be located.
@@ -63,7 +63,8 @@ export type LinearGradientProps = ViewProps & {
 /**
  * Renders a native view that transitions between multiple colors in a linear direction.
  */
-export declare class LinearGradient extends React.Component<LinearGradientProps> {
-    render(): React.JSX.Element;
+export declare class LinearGradient extends Component<LinearGradientProps> {
+    render(): import("react").JSX.Element;
 }
+export { NativeLinearGradientPoint };
 //# sourceMappingURL=LinearGradient.d.ts.map

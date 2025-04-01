@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.net.Uri
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.devsupport.interfaces.DevSupportManager
-import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.updates.db.DatabaseHolder
 import expo.modules.updates.db.Reaper
@@ -50,13 +49,12 @@ class UpdatesDevLauncherController(
   override val updatesDirectory: File?,
   private val updatesDirectoryException: Exception?
 ) : IUpdatesController, UpdatesInterface {
-  override var appContext: WeakReference<AppContext>? = null
   override val eventManager = NoOpUpdatesEventManager()
   override var updatesInterfaceCallbacks: WeakReference<UpdatesInterfaceCallbacks>? = null
 
   private var launcher: Launcher? = null
 
-  private val logger = UpdatesLogger(context)
+  private val logger = UpdatesLogger(context.filesDir)
 
   private var previousUpdatesConfiguration: UpdatesConfiguration? = null
   private var updatesConfiguration: UpdatesConfiguration? = initialUpdatesConfiguration
@@ -80,11 +78,18 @@ class UpdatesDevLauncherController(
   }
 
   @get:Synchronized
-  override val launchAssetFile: String
-    get() = throw Exception("IUpdatesController.launchAssetFile should not be called in dev client")
+  override val launchAssetFile: String?
+    get() {
+      logger.warn("launchAssetFile should not be called from expo-dev-client build, except for Detox testing")
+      return null
+    }
 
   override val bundleAssetName: String
     get() = throw Exception("IUpdatesController.bundleAssetName should not be called in dev client")
+
+  override fun onEventListenerStartObserving() {
+    // no-op for UpdatesDevLauncherController
+  }
 
   override fun onDidCreateDevSupportManager(devSupportManager: DevSupportManager) {}
 
@@ -359,6 +364,10 @@ class UpdatesDevLauncherController(
     callback: IUpdatesController.ModuleCallback<Unit>
   ) {
     callback.onFailure(NotAvailableInDevClientException("Updates.setExtraParamAsync() is not supported in development builds."))
+  }
+
+  override fun setUpdateURLAndRequestHeadersOverride(configOverride: UpdatesConfigurationOverride?) {
+    throw NotAvailableInDevClientException("Updates.setUpdateURLAndRequestHeadersOverride() is not supported in development builds.")
   }
 
   companion object {

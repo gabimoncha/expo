@@ -4,13 +4,31 @@
 
 ### 🛠 Breaking changes
 
-- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
-
 ### 🎉 New features
 
 ### 🐛 Bug fixes
 
 ### 💡 Others
+
+- [Android] Started using expo modules gradle plugin. ([#34176](https://github.com/expo/expo/pull/34176) by [@lukmccall](https://github.com/lukmccall))
+
+## 0.13.3 - 2025-02-21
+
+_This version does not introduce any user-facing changes._
+
+## 0.13.2 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 0.13.1 — 2024-10-22
+
+_This version does not introduce any user-facing changes._
+
+## 0.13.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
+- Bumped iOS and tvOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
 
 ## 0.12.0 — 2024-04-18
 

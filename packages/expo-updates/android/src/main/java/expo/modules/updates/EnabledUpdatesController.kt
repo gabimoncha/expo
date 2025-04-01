@@ -2,18 +2,16 @@ package expo.modules.updates
 
 import android.app.Activity
 import android.content.Context
-import android.os.AsyncTask
 import android.os.Bundle
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.devsupport.interfaces.DevSupportManager
-import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.toCodedException
 import expo.modules.updates.db.BuildData
 import expo.modules.updates.db.DatabaseHolder
 import expo.modules.updates.db.UpdatesDatabase
 import expo.modules.updates.events.IUpdatesEventManager
-import expo.modules.updates.events.QueueUpdatesEventManager
+import expo.modules.updates.events.UpdatesEventManager
 import expo.modules.updates.launcher.Launcher.LauncherCallback
 import expo.modules.updates.loader.FileDownloader
 import expo.modules.updates.logging.UpdatesErrorCode
@@ -28,6 +26,9 @@ import expo.modules.updates.procedures.StartupProcedure
 import expo.modules.updates.selectionpolicy.SelectionPolicyFactory
 import expo.modules.updates.statemachine.UpdatesStateMachine
 import expo.modules.updates.statemachine.UpdatesStateValue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.lang.ref.WeakReference
 import kotlin.time.DurationUnit
@@ -41,12 +42,10 @@ class EnabledUpdatesController(
   private val updatesConfiguration: UpdatesConfiguration,
   override val updatesDirectory: File
 ) : IUpdatesController {
-  override var appContext: WeakReference<AppContext>? = null
-
   /** Keep the activity for [RelaunchProcedure] to relaunch the app. */
   private var weakActivity: WeakReference<Activity>? = null
-  private val logger = UpdatesLogger(context)
-  override val eventManager: IUpdatesEventManager = QueueUpdatesEventManager(logger)
+  private val logger = UpdatesLogger(context.filesDir)
+  override val eventManager: IUpdatesEventManager = UpdatesEventManager(logger)
 
   private val fileDownloader = FileDownloader(context, updatesConfiguration, logger)
   private val selectionPolicy = SelectionPolicyFactory.createFilterAwarePolicy(
@@ -54,9 +53,10 @@ class EnabledUpdatesController(
   )
   private val stateMachine = UpdatesStateMachine(logger, eventManager, UpdatesStateValue.entries.toSet())
   private val databaseHolder = DatabaseHolder(UpdatesDatabase.getInstance(context))
+  private val controllerScope = CoroutineScope(Dispatchers.IO)
 
   private fun purgeUpdatesLogsOlderThanOneDay() {
-    UpdatesLogReader(context).purgeLogEntries {
+    UpdatesLogReader(context.filesDir).purgeLogEntries {
       if (it != null) {
         logger.error("UpdatesLogReader: error in purgeLogEntries", it, UpdatesErrorCode.Unknown)
       }
@@ -117,6 +117,10 @@ class EnabledUpdatesController(
     }
   override val bundleAssetName: String?
     get() = startupProcedure.bundleAssetName
+
+  override fun onEventListenerStartObserving() {
+    stateMachine.sendContextToJS()
+  }
 
   override fun onDidCreateDevSupportManager(devSupportManager: DevSupportManager) {
     startupProcedure.onDidCreateDevSupportManager(devSupportManager)
@@ -218,7 +222,7 @@ class EnabledUpdatesController(
   }
 
   override fun getExtraParams(callback: IUpdatesController.ModuleCallback<Bundle>) {
-    AsyncTask.execute {
+    controllerScope.launch {
       try {
         val result = ManifestMetadata.getExtraParams(
           databaseHolder.database,
@@ -244,7 +248,7 @@ class EnabledUpdatesController(
   }
 
   override fun setExtraParam(key: String, value: String?, callback: IUpdatesController.ModuleCallback<Unit>) {
-    AsyncTask.execute {
+    controllerScope.launch {
       try {
         ManifestMetadata.setExtraParam(
           databaseHolder.database,
@@ -259,6 +263,13 @@ class EnabledUpdatesController(
         callback.onFailure(e.toCodedException())
       }
     }
+  }
+
+  override fun setUpdateURLAndRequestHeadersOverride(configOverride: UpdatesConfigurationOverride?) {
+    if (!updatesConfiguration.disableAntiBrickingMeasures) {
+      throw CodedException("ERR_UPDATES_RUNTIME_OVERRIDE", "Must set disableAntiBrickingMeasures configuration to use updates overriding", null)
+    }
+    UpdatesConfigurationOverride.save(context, configOverride)
   }
 
   companion object {

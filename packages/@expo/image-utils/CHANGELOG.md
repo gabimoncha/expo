@@ -6,9 +6,37 @@
 
 ### 🎉 New features
 
-- Properly support dark/tinted icon variant generation on Apple platforms. ([#30247](https://github.com/expo/expo/pull/30247) by [@fobos531](https://github.com/fobos531))
-
 ### 🐛 Bug fixes
+
+### 💡 Others
+
+- Drop `fs-extra` in favor of `fs`. ([#35036](https://github.com/expo/expo/pull/35036) by [@kitten](https://github.com/kitten))
+
+## 0.6.5 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 0.6.4 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 0.6.3 — 2024-11-07
+
+_This version does not introduce any user-facing changes._
+
+## 0.6.2 — 2024-11-05
+
+_This version does not introduce any user-facing changes._
+
+## 0.6.1 — 2024-10-31
+
+_This version does not introduce any user-facing changes._
+
+## 0.6.0 — 2024-10-22
+
+### 🎉 New features
+
+- Properly support dark/tinted icon variant generation on Apple platforms. ([#30247](https://github.com/expo/expo/pull/30247) by [@fobos531](https://github.com/fobos531))
 
 ### 💡 Others
 

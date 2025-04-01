@@ -53,7 +53,8 @@ final class RelaunchProcedure: StateMachineProcedure {
       config: config,
       database: database,
       directory: updatesDirectory,
-      completionQueue: controllerQueue
+      completionQueue: controllerQueue,
+      logger: self.logger
     )
   }
 
@@ -62,7 +63,7 @@ final class RelaunchProcedure: StateMachineProcedure {
   }
 
   func run(procedureContext: ProcedureContext) {
-    procedureContext.processStateEvent(UpdatesStateEventRestart())
+    procedureContext.processStateEvent(.restart)
     launcherWithDatabase.launchUpdate(withSelectionPolicy: selectionPolicy) { error, success in
       DispatchQueue.main.async {
         if success {
@@ -70,22 +71,22 @@ final class RelaunchProcedure: StateMachineProcedure {
           self.requestStartErrorMonitoring()
           RCTReloadCommandSetBundleURL(self.launcherWithDatabase.launchAssetUrl)
           RCTTriggerReloadCommandListeners(self.triggerReloadCommandListenersReason)
-          
+
           // TODO(wschurman): this was moved to after the RCT calls to unify reload
           // code between JS API call and error recovery handler. double check that
           // this is okay
           self.successBlock()
-          
+
           if self.shouldRunReaper {
             self.runReaper()
           }
-          
+
           // Reset the state machine
-          procedureContext.resetState()
+          procedureContext.resetStateAfterRestart()
           procedureContext.onComplete()
         } else {
           // swiftlint:disable:next force_unwrapping
-          NSLog("Failed to relaunch: %@", error!.localizedDescription)
+          self.logger.error(cause: UpdatesError.relaunchProcedureFailedToRelaunch(cause: error!))
           self.errorBlock(UpdatesReloadException())
           procedureContext.onComplete()
         }
@@ -100,7 +101,8 @@ final class RelaunchProcedure: StateMachineProcedure {
         database: database,
         directory: updatesDirectory,
         selectionPolicy: selectionPolicy,
-        launchedUpdate: launchedUpdate
+        launchedUpdate: launchedUpdate,
+        logger: self.logger
       )
     }
   }

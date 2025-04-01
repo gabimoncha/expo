@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Head = void 0;
-const core_1 = require("@react-navigation/core");
+const native_1 = require("@react-navigation/native");
 const react_1 = __importDefault(require("react"));
 const ExpoHeadModule_1 = require("./ExpoHeadModule");
 const url_1 = require("./url");
@@ -49,15 +49,30 @@ function serializedMetaChildren(meta) {
             return {
                 type: 'title',
                 props: {
-                    children: typeof child.props.children === 'string' ? child.props.children : undefined,
+                    children: child.props &&
+                        typeof child.props === 'object' &&
+                        'children' in child.props &&
+                        typeof child.props.children === 'string'
+                        ? child.props.children
+                        : undefined,
                 },
             };
         }
         return {
             type: 'meta',
             props: {
-                property: typeof child.props.property === 'string' ? child.props.property : undefined,
-                content: typeof child.props.content === 'string' ? child.props.content : undefined,
+                property: child.props &&
+                    typeof child.props === 'object' &&
+                    'property' in child.props &&
+                    typeof child.props.property === 'string'
+                    ? child.props.property
+                    : undefined,
+                content: child.props &&
+                    typeof child.props === 'object' &&
+                    'content' in child.props &&
+                    typeof child.props.content === 'string'
+                    ? child.props.content
+                    : undefined,
             },
         };
     });
@@ -142,7 +157,7 @@ function isTruthy(value) {
     return [true, 'true'].includes(value);
 }
 function HeadNative(props) {
-    const isFocused = (0, core_1.useIsFocused)();
+    const isFocused = (0, native_1.useIsFocused)();
     if (!isFocused) {
         return <UnfocusedHead />;
     }

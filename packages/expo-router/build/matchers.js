@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isTypedRoute = exports.stripInvisibleSegmentsFromPath = exports.stripGroupSegmentsFromPath = exports.removeFileSystemDots = exports.removeSupportedExtensions = exports.getContextKey = exports.getNameFromFilePath = exports.matchArrayGroupName = exports.matchLastGroupName = exports.matchGroupName = exports.testNotFound = exports.matchDeepDynamicRouteName = exports.matchDynamicName = void 0;
+exports.isTypedRoute = exports.stripInvisibleSegmentsFromPath = exports.stripGroupSegmentsFromPath = exports.removeFileSystemDots = exports.removeFileSystemExtensions = exports.removeSupportedExtensions = exports.getContextKey = exports.getNameFromFilePath = exports.matchArrayGroupName = exports.matchLastGroupName = exports.matchGroupName = exports.testNotFound = exports.matchDeepDynamicRouteName = exports.matchDynamicName = void 0;
 /** Match `[page]` -> `page` */
 function matchDynamicName(name) {
     // Don't match `...` or `[` or `]` inside the brackets
@@ -25,7 +25,7 @@ function matchGroupName(name) {
 exports.matchGroupName = matchGroupName;
 /** Match `(app)/(page)` -> `page` */
 function matchLastGroupName(name) {
-    return name.match(/.*(?<=\/|^)\(([^\\/\s]+)\)[^\s]*$/)?.[1];
+    return name.match(/.*(?:\/|^)\(([^\\/\s]+)\)[^\s]*$/)?.[1];
 }
 exports.matchLastGroupName = matchLastGroupName;
 /** Match the first array group name `(a,b,c)/(d,c)` -> `'a,b,c'` */
@@ -47,11 +47,16 @@ function getContextKey(name) {
     return normal.replace(/\/?_layout$/, '');
 }
 exports.getContextKey = getContextKey;
-/** Remove `.js`, `.ts`, `.jsx`, `.tsx` */
+/** Remove `.js`, `.ts`, `.jsx`, `.tsx`, and the +api suffix */
 function removeSupportedExtensions(name) {
     return name.replace(/(\+api)?\.[jt]sx?$/g, '');
 }
 exports.removeSupportedExtensions = removeSupportedExtensions;
+/** Remove `.js`, `.ts`, `.jsx`, `.tsx` */
+function removeFileSystemExtensions(name) {
+    return name.replace(/\.[jt]sx?$/g, '');
+}
+exports.removeFileSystemExtensions = removeFileSystemExtensions;
 // Remove any amount of `./` and `../` from the start of the string
 function removeFileSystemDots(filePath) {
     return filePath.replace(/^(?:\.\.?\/)+/g, '');

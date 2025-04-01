@@ -24,51 +24,67 @@ describe('push', () => {
     testRouter.push('/page?c=true');
 
     expect(store.rootState).toStrictEqual({
-      index: 5,
+      index: 0,
       key: expect.any(String),
-      routeNames: ['page', '_sitemap', '+not-found'],
+      preloadedRoutes: [],
+      routeNames: ['__root'],
       routes: [
         {
           key: expect.any(String),
-          name: 'page',
+          name: '__root',
           params: undefined,
-          path: '/page',
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {
-            a: 'true',
+          state: {
+            index: 5,
+            key: expect.any(String),
+            preloadedRoutes: [],
+            routeNames: ['page', '_sitemap', '+not-found'],
+            routes: [
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: undefined,
+                path: '/page',
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  a: 'true',
+                },
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  b: 'true',
+                },
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {},
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {},
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  c: 'true',
+                },
+                path: undefined,
+              },
+            ],
+            stale: false,
+            type: 'stack',
           },
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {
-            b: 'true',
-          },
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {},
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {},
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {
-            c: 'true',
-          },
-          path: undefined,
         },
       ],
       stale: false,
@@ -84,13 +100,29 @@ describe('push', () => {
     expect(store.rootState).toEqual({
       index: 0,
       key: expect.any(String),
-      routeNames: ['page', '_sitemap', '+not-found'],
+      preloadedRoutes: [],
+      routeNames: ['__root'],
       routes: [
         {
           key: expect.any(String),
-          name: 'page',
+          name: '__root',
           params: undefined,
-          path: '/page',
+          state: {
+            index: 0,
+            key: expect.any(String),
+            preloadedRoutes: [],
+            routeNames: ['page', '_sitemap', '+not-found'],
+            routes: [
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: undefined,
+                path: '/page',
+              },
+            ],
+            stale: false,
+            type: 'stack',
+          },
         },
       ],
       stale: false,
@@ -125,15 +157,31 @@ describe('navigate', () => {
     expect(store.rootState).toStrictEqual({
       index: 0,
       key: expect.any(String),
-      routeNames: ['page', '_sitemap', '+not-found'],
+      preloadedRoutes: [],
+      routeNames: ['__root'],
       routes: [
         {
           key: expect.any(String),
-          name: 'page',
-          params: {
-            c: 'true',
+          name: '__root',
+          params: undefined,
+          state: {
+            index: 0,
+            key: expect.any(String),
+            preloadedRoutes: [],
+            routeNames: ['page', '_sitemap', '+not-found'],
+            routes: [
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  c: 'true',
+                },
+                path: '/page',
+              },
+            ],
+            stale: false,
+            type: 'stack',
           },
-          path: '/page',
         },
       ],
       stale: false,
@@ -156,39 +204,55 @@ describe('navigate', () => {
     testRouter.navigate('/c');
 
     expect(store.rootState).toStrictEqual({
-      index: 3,
+      index: 0,
       key: expect.any(String),
-      routeNames: ['index', '_sitemap', '[page]', '+not-found'],
+      preloadedRoutes: [],
+      routeNames: ['__root'],
       routes: [
         {
           key: expect.any(String),
-          name: 'index',
+          name: '__root',
           params: undefined,
-          path: '/',
-        },
-        {
-          key: expect.any(String),
-          name: '[page]',
-          params: {
-            page: 'a',
+          state: {
+            index: 3,
+            key: expect.any(String),
+            preloadedRoutes: [],
+            routeNames: ['index', '_sitemap', '[page]', '+not-found'],
+            routes: [
+              {
+                key: expect.any(String),
+                name: 'index',
+                params: undefined,
+                path: '/',
+              },
+              {
+                key: expect.any(String),
+                name: '[page]',
+                params: {
+                  page: 'a',
+                },
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: '[page]',
+                params: {
+                  page: 'b',
+                },
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: '[page]',
+                params: {
+                  page: 'c',
+                },
+                path: undefined,
+              },
+            ],
+            stale: false,
+            type: 'stack',
           },
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: '[page]',
-          params: {
-            page: 'b',
-          },
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: '[page]',
-          params: {
-            page: 'c',
-          },
-          path: undefined,
         },
       ],
       stale: false,
@@ -200,13 +264,29 @@ describe('navigate', () => {
     expect(store.rootState).toStrictEqual({
       index: 0,
       key: expect.any(String),
-      routeNames: ['index', '_sitemap', '[page]', '+not-found'],
+      preloadedRoutes: [],
+      routeNames: ['__root'],
       routes: [
         {
           key: expect.any(String),
-          name: 'index',
+          name: '__root',
           params: undefined,
-          path: '/',
+          state: {
+            index: 0,
+            key: expect.any(String),
+            preloadedRoutes: [],
+            routeNames: ['index', '_sitemap', '[page]', '+not-found'],
+            routes: [
+              {
+                key: expect.any(String),
+                name: 'index',
+                params: undefined,
+                path: '/',
+              },
+            ],
+            stale: false,
+            type: 'stack',
+          },
         },
       ],
       stale: false,
@@ -234,38 +314,54 @@ describe('replace', () => {
     testRouter.push('/page?c=true');
 
     expect(store.rootState).toStrictEqual({
-      index: 3,
+      index: 0,
       key: expect.any(String),
-      routeNames: ['page', '_sitemap', '+not-found'],
+      preloadedRoutes: [],
+      routeNames: ['__root'],
       routes: [
         {
           key: expect.any(String),
-          name: 'page',
+          name: '__root',
           params: undefined,
-          path: '/page',
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {
-            a: 'true',
+          state: {
+            index: 3,
+            key: expect.any(String),
+            preloadedRoutes: [],
+            routeNames: ['page', '_sitemap', '+not-found'],
+            routes: [
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: undefined,
+                path: '/page',
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  a: 'true',
+                },
+                path: undefined,
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  a: 'true',
+                },
+              },
+              {
+                key: expect.any(String),
+                name: 'page',
+                params: {
+                  c: 'true',
+                },
+                path: undefined,
+              },
+            ],
+            stale: false,
+            type: 'stack',
           },
-          path: undefined,
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {
-            a: 'true',
-          },
-        },
-        {
-          key: expect.any(String),
-          name: 'page',
-          params: {
-            c: 'true',
-          },
-          path: undefined,
         },
       ],
       stale: false,

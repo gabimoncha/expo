@@ -27,7 +27,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resize = exports.getJimpImageAsync = exports.createSquareAsync = exports.circleAsync = exports.isFolderAsync = exports.jimpAsync = exports.convertFormat = exports.resizeBufferAsync = void 0;
-const fs_extra_1 = __importDefault(require("fs-extra"));
+const fs_1 = __importDefault(require("fs"));
 // @ts-ignore
 const jimp_compact_1 = __importDefault(require("jimp-compact"));
 const path = __importStar(require("path"));
@@ -79,10 +79,10 @@ async function jimpAsync(options, commands = []) {
     const imgBuffer = await image.getBufferAsync(mime);
     if (typeof options.output === 'string') {
         if (await isFolderAsync(options.output)) {
-            await fs_extra_1.default.writeFile(path.join(options.output, path.basename(options.originalInput)), imgBuffer);
+            await fs_1.default.promises.writeFile(path.join(options.output, path.basename(options.originalInput)), imgBuffer);
         }
         else {
-            await fs_extra_1.default.writeFile(options.output, imgBuffer);
+            await fs_1.default.promises.writeFile(options.output, imgBuffer);
         }
     }
     return imgBuffer;
@@ -90,7 +90,7 @@ async function jimpAsync(options, commands = []) {
 exports.jimpAsync = jimpAsync;
 async function isFolderAsync(path) {
     try {
-        return (await fs_extra_1.default.stat(path)).isDirectory();
+        return (await fs_1.default.promises.stat(path)).isDirectory();
     }
     catch {
         return false;
@@ -98,13 +98,17 @@ async function isFolderAsync(path) {
 }
 exports.isFolderAsync = isFolderAsync;
 function circleAsync(jimp) {
-    const radius = Math.min(jimp.bitmap.width, jimp.bitmap.height) / 2;
+    const diameter = Math.min(jimp.bitmap.width, jimp.bitmap.height);
     const center = {
         x: jimp.bitmap.width / 2,
         y: jimp.bitmap.height / 2,
     };
     return new Promise((resolve) => {
-        jimp.scanQuiet(0, 0, jimp.bitmap.width, jimp.bitmap.height, (x, y, idx) => {
+        jimp
+            .resize(diameter, diameter)
+            .crop((jimp.bitmap.width - diameter) / 2, (jimp.bitmap.height - diameter) / 2, diameter, diameter)
+            .scanQuiet(0, 0, diameter, diameter, (x, y, idx) => {
+            const radius = diameter / 2;
             const curR = Math.sqrt(Math.pow(x - center.x, 2) + Math.pow(y - center.y, 2));
             if (radius - curR <= 0.0) {
                 jimp.bitmap.data[idx + 3] = 0;
@@ -112,8 +116,8 @@ function circleAsync(jimp) {
             else if (radius - curR < 1.0) {
                 jimp.bitmap.data[idx + 3] = 255 * (radius - curR);
             }
-            resolve(jimp);
         });
+        resolve(jimp);
     });
 }
 exports.circleAsync = circleAsync;

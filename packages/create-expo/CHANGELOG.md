@@ -10,6 +10,54 @@
 
 ### 💡 Others
 
+## 3.3.0 — 2025-03-31
+
+### 🎉 New features
+
+- Support GitHub shorthand for templates ([#33383](https://github.com/expo/expo/pull/33383) by [@satya164](https://github.com/satya164))
+- Add support for aliasing and deprecating examples. ([#35717](https://github.com/expo/expo/pull/35717) by [@brentvatne](https://github.com/brentvatne))
+
+### 💡 Others
+
+- Drop `fast-glob` in favor of `glob`. ([#35082](https://github.com/expo/expo/pull/35082) by [@kitten](https://github.com/kitten))
+- Upgrade to `tar@6` ([#35315](https://github.com/expo/expo/pull/35315) by [@kitten](https://github.com/kitten))
+
+## 3.1.6 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 3.1.5 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 3.1.4 - 2025-01-08
+
+_This version does not introduce any user-facing changes._
+
+## 3.1.3 - 2024-11-29
+
+### 🐛 Bug fixes
+
+- Support making templates for React Native macOS, and rename project name inside `contents.xcworkspacedata` files ([#30309](https://github.com/expo/expo/pull/30309) by [@shirakaba](https://github.com/shirakaba))
+
+## 3.1.2 — 2024-11-14
+
+_This version does not introduce any user-facing changes._
+
+## 3.1.1 — 2024-11-11
+
+_This version does not introduce any user-facing changes._
+
+## 3.1.0 — 2024-11-04
+
+### 🎉 New features
+
+- Add log hint for `--template` and `--example` arguments. ([#32519](https://github.com/expo/expo/pull/32519) by [@kitten](https://github.com/kitten))
+
+## 3.0.1 — 2024-10-22
+
+### 💡 Others
+
 - Update `tar` dependency. ([#29663](https://github.com/expo/expo/pull/29663) by [@Simek](https://github.com/Simek))
 - Use `npx` for npm examples. ([#31012](https://github.com/expo/expo/pull/31012) by [](@kadikraman)(https://github.com/kadikraman))
 
@@ -23,6 +71,7 @@
 ### 🎉 New features
 
 ### 🐛 Bug fixes
+
 - Update list of available templates ([#29955](https://github.com/expo/expo/pull/29955) by [@kadikraman](https://github.com/kadikraman))
 
 ### 💡 Others

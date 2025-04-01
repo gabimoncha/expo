@@ -10,6 +10,31 @@
 
 ### 💡 Others
 
+- Remove unused `sudo-prompt` dependency ([#34559](https://github.com/expo/expo/pull/34559) by [@kitten](https://github.com/kitten))
+- Remove unused dependencies. ([#35038](https://github.com/expo/expo/pull/35038) by [@kitten](https://github.com/kitten))
+
+## 1.7.2 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 1.7.1 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 1.7.0 - 2025-01-07
+
+### 🎉 New features
+
+- Add support for Bun's text-based lock file format `bun.lock` ([#33825](https://github.com/expo/expo/pull/33825) by [@tharakadesilva](https://github.com/tharakadesilva))
+
+## 1.6.1 — 2024-11-13
+
+_This version does not introduce any user-facing changes._
+
+## 1.6.0 — 2024-10-22
+
+### 💡 Others
+
 - Remove file that causes expo repo to not be clonable on windows machines ([#31720](https://github.com/expo/expo/pull/31720) by [@acoates-ms](https://github.com/acoates-ms))
 - Update `npm-package-arg@^7` to `npm-package-arg@^11`. ([#30842](https://github.com/expo/expo/pull/30842) by [@kitten](https://github.com/kitten))
 - Simplify workspace root detection with `resolve-workspace-root`. ([#31124](https://github.com/expo/expo/pull/31124) by [@byCedric](https://github.com/byCedric))

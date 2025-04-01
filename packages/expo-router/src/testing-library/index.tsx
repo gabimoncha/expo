@@ -7,7 +7,7 @@ import React from 'react';
 
 import { MockContextConfig, getMockConfig, getMockContext } from './mock-config';
 import { ExpoRoot } from '../ExpoRoot';
-import getPathFromState from '../fork/getPathFromState';
+import { getPathFromState } from '../fork/getPathFromState';
 import { ExpoLinkingOptions } from '../getLinkingConfig';
 import { store } from '../global-state/router-store';
 import { router } from '../imperative-api';
@@ -39,7 +39,7 @@ declare global {
       toHavePathnameWithParams(pathname: string): R;
       toHaveSegments(segments: string[]): R;
       toHaveSearchParams(params: Record<string, string | string[]>): R;
-      toHaveRouterState(state: NavigationState<any> | PartialState<any>): R;
+      toHaveRouterState(state: Record<string, unknown>): R;
     }
   }
 }

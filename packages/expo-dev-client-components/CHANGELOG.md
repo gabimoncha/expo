@@ -8,6 +8,30 @@
 
 ### 🐛 Bug fixes
 
+### 💡 Others
+
+## 2.0.4 - 2025-03-11
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.3 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.2 — 2024-10-29
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.1 — 2024-10-22
+
+### 💡 Others
+
+- Fixed check-package test errors. ([#32232](https://github.com/expo/expo/pull/32232) by [@kudo](https://github.com/kudo))
+
+## 2.0.0 — 2024-10-22
+
+### 🐛 Bug fixes
+
 - Add missing `react`/`react-native` peer dependencies. ([#30573](https://github.com/expo/expo/pull/30573) by [@byCedric](https://github.com/byCedric))
 
 ### 💡 Others

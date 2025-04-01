@@ -15,7 +15,7 @@ export {
 
 export { router, Router } from './imperative-api';
 
-export { Link, Redirect, LinkProps, WebAnchorProps } from './link/Link';
+export { Link, Redirect, RedirectProps, LinkProps, WebAnchorProps } from './link/Link';
 
 export { withLayoutContext } from './layouts/withLayoutContext';
 export { Navigator, Slot };
@@ -23,19 +23,22 @@ export { Navigator, Slot };
 // Expo Router Views
 export { ExpoRoot } from './ExpoRoot';
 export { Unmatched } from './views/Unmatched';
+export { Sitemap } from './views/Sitemap';
 export { ErrorBoundaryProps } from './views/Try';
 export { ErrorBoundary } from './views/ErrorBoundary';
-export { ScreenProps } from './useScreens';
+export type { ScreenProps } from './useScreens';
 
 // Platform
 /**
  * @hidden
  */
-export { SplashScreen } from './views/Splash';
+export * as SplashScreen from './views/Splash';
 
 // React Navigation
 export { useNavigation } from './useNavigation';
 export { useFocusEffect, EffectCallback } from './useFocusEffect';
-export { ResultState } from './fork/getStateFromPath';
+export type { ResultState } from './fork/getStateFromPath';
+
+export type { RedirectConfig } from './getRoutesCore';
 
 export type * from './types';

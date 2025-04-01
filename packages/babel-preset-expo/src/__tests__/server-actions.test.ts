@@ -47,17 +47,22 @@ afterAll(() => {
 
 // import { createPlugin as createReactServerPlugin } from '../server-actions-plugin';
 
-function transformTest(sourceCode: string) {
+function transformTest(sourceCode: string, customOptions: { filename?: string } = {}) {
   const options = {
     ...DEF_OPTIONS,
     // plugins: [serverActionPlugin],
     caller: getCaller(ENABLED_CALLER),
+    ...customOptions,
   };
 
   const results = babel.transform(sourceCode, options);
   if (!results) throw new Error('Failed to transform code');
   //   console.log('results', results.code);
   const meta = results.metadata as unknown as { hasCjsExports?: boolean };
+
+  // Parse again to ensure the output is valid code
+  babel.parse(results.code, options);
+
   return {
     code: results.code,
     hasCjsExports: meta.hasCjsExports,
@@ -101,7 +106,7 @@ describe('syntax', () => {
       "/*rsc/actions: {"id":"file:///unknown","names":["_$$INLINE_ACTION"]}*/
       import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
       // hoisted action: foo
-      export const _$$INLINE_ACTION = _registerServerReference(async function foo() {
+      export var _$$INLINE_ACTION = _registerServerReference(async function foo() {
         return 'bar';
       }, "file:///unknown", "_$$INLINE_ACTION");
       var foo = _$$INLINE_ACTION;"
@@ -119,7 +124,7 @@ describe('syntax', () => {
       "/*rsc/actions: {"id":"file:///unknown","names":["_$$INLINE_ACTION"]}*/
       import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
       // hoisted action: <anonymous>
-      export const _$$INLINE_ACTION = _registerServerReference(async bar => {
+      export var _$$INLINE_ACTION = _registerServerReference(async bar => {
         return 'bar';
       }, "file:///unknown", "_$$INLINE_ACTION");
       const foo = _$$INLINE_ACTION;"
@@ -155,22 +160,22 @@ export { test2a };
     ).toMatchInlineSnapshot(`
       "/*rsc/actions: {"id":"file:///unknown","names":["_$$INLINE_ACTION","_$$INLINE_ACTION2","_$$INLINE_ACTION3"]}*/
       import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
-      // hoisted action: test2a
-      export const _$$INLINE_ACTION3 = _registerServerReference(async function test2a(x) {
-        return external([x, SOME_CONSTANT]);
-      }, "file:///unknown", "_$$INLINE_ACTION3");
-      // hoisted action: test2
-      export const _$$INLINE_ACTION2 = _registerServerReference(async function test2(x) {
-        return external([x, SOME_CONSTANT]);
-      }, "file:///unknown", "_$$INLINE_ACTION2");
-      // hoisted action: <anonymous>
-      export const _$$INLINE_ACTION = _registerServerReference(async x => {
-        return external([x, SOME_CONSTANT]);
-      }, "file:///unknown", "_$$INLINE_ACTION");
       const external = () => {};
       const SOME_CONSTANT = "beep";
+      // hoisted action: <anonymous>
+      export var _$$INLINE_ACTION = _registerServerReference(async x => {
+        return external([x, SOME_CONSTANT]);
+      }, "file:///unknown", "_$$INLINE_ACTION");
       export const test1 = _$$INLINE_ACTION;
+      // hoisted action: test2
+      export var _$$INLINE_ACTION2 = _registerServerReference(async function test2(x) {
+        return external([x, SOME_CONSTANT]);
+      }, "file:///unknown", "_$$INLINE_ACTION2");
       export var test2 = _$$INLINE_ACTION2;
+      // hoisted action: test2a
+      export var _$$INLINE_ACTION3 = _registerServerReference(async function test2a(x) {
+        return external([x, SOME_CONSTANT]);
+      }, "file:///unknown", "_$$INLINE_ACTION3");
       var test2a = _$$INLINE_ACTION3;
       export { test2a };"
     `);
@@ -207,11 +212,11 @@ export const test3 = withAuth(async (x) => {
         };
       };
       // hoisted action: <anonymous>
-      export const _$$INLINE_ACTION2 = _registerServerReference(async x => {
+      export var _$$INLINE_ACTION2 = _registerServerReference(async x => {
         return external([x, SOME_CONSTANT]);
       }, "file:///unknown", "_$$INLINE_ACTION2");
       // hoisted action: <anonymous>
-      export const _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, ...args) => {
+      export var _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, ...args) => {
         var [fn] = _$$CLOSURE.value;
         return fn(...args);
       }, "file:///unknown", "_$$INLINE_ACTION");
@@ -271,8 +276,9 @@ export async function foo() {
         };
       };
       import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+      const external = () => {};
       // hoisted action: doStuff
-      export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+      export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
         var [foo2] = _$$CLOSURE.value;
         const test = data.get("test");
         await external({
@@ -283,7 +289,6 @@ export async function foo() {
           success: true
         };
       }, "file:///unknown", "_$$INLINE_ACTION");
-      const external = () => {};
       export const Test = ({
         foo
       }) => {
@@ -338,8 +343,9 @@ export const Test2 = ({ foo }) => {
         };
       };
       import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+      const external = () => {};
       // hoisted action: doStuff
-      export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+      export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
         var [foo2] = _$$CLOSURE.value;
         const test = data.get("test");
         await doSomethingOnTheServer({
@@ -350,7 +356,6 @@ export const Test2 = ({ foo }) => {
           success: true
         };
       }, "file:///unknown", "_$$INLINE_ACTION");
-      const external = () => {};
       export const Test2 = ({
         foo
       }) => {
@@ -371,6 +376,208 @@ export const Test2 = ({ foo }) => {
       };"
     `);
   });
+
+  describe('default export', () => {
+    it('supports top-level directive with default export of named function', () => {
+      expect(
+        transformTest(`
+  "use server";
+  
+  export default async function test() {
+  }`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        async function test() {}
+        (() => _registerServerReference(test, "file:///unknown", "default"))();
+        export { test as default };"
+      `);
+    });
+    it('supports top-level directive with default export of named function with JSX', () => {
+      expect(
+        transformTest(`
+  "use server";
+  
+  export default async function test() {
+    return <div>hello</div>
+  }`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        import { jsx as _jsx } from "react/jsx-runtime";
+        async function test() {
+          return /*#__PURE__*/_jsx("div", {
+            children: "hello"
+          });
+        }
+        (() => _registerServerReference(test, "file:///unknown", "default"))();
+        export { test as default };"
+      `);
+    });
+
+    it('supports top-level directive with default export of anonymous function', () => {
+      expect(
+        transformTest(`
+  "use server";
+  export default async function(formData) { 
+  };`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        async function _$$INLINE_ACTION(formData) {}
+        (() => _registerServerReference(_$$INLINE_ACTION, "file:///unknown", "default"))();
+        export { _$$INLINE_ACTION as default };
+        ;"
+      `);
+    });
+
+    it('supports top-level directive with default export of named arrow function', () => {
+      expect(
+        transformTest(`
+  "use server";
+  export default foo = async (formData) => {
+  };`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        var foo = async formData => {};
+        (() => _registerServerReference(foo, "file:///unknown", "default"))();
+        export { foo as default };"
+      `);
+    });
+    it('supports top-level directive with default export of named arrow function with JSX', () => {
+      const code = transformTest(`
+        "use server";
+        export default foo = async (formData) => {
+        return <div />
+        };`).code;
+      // Ensure the JSX is removed
+      expect(code).not.toMatch('<');
+      expect(code).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        import { jsx as _jsx } from "react/jsx-runtime";
+        var foo = async formData => {
+          return /*#__PURE__*/_jsx("div", {});
+        };
+        (() => _registerServerReference(foo, "file:///unknown", "default"))();
+        export { foo as default };"
+      `);
+    });
+
+    it('supports top-level directive with default export of anonymous arrow function', () => {
+      expect(
+        transformTest(`
+  "use server";
+  export default async (formData) => { 
+  };`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        var _$$INLINE_ACTION = async formData => {};
+        (() => _registerServerReference(_$$INLINE_ACTION, "file:///unknown", "default"))();
+        export { _$$INLINE_ACTION as default };"
+      `);
+    });
+
+    it('supports top-level directive with default export and non-default', () => {
+      expect(
+        transformTest(`
+  "use server";
+
+export const greet = async (inputName: string) => 'hello';
+
+export default function ServerActionsInFile() {
+  return <div>Hey</div>;
+}
+`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["greet","default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        import { jsx as _jsx } from "react/jsx-runtime";
+        export const greet = async inputName => 'hello';
+        (() => _registerServerReference(greet, "file:///unknown", "greet"))();
+        function ServerActionsInFile() {
+          return /*#__PURE__*/_jsx("div", {
+            children: "Hey"
+          });
+        }
+        (() => _registerServerReference(ServerActionsInFile, "file:///unknown", "default"))();
+        export { ServerActionsInFile as default };"
+      `);
+    });
+
+    it('supports top-level directive with default export of variable', () => {
+      expect(
+        transformTest(`
+"use server";
+
+async function test() {
+}
+
+export default test;
+`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        async function test() {}
+        (() => _registerServerReference(test, "file:///unknown", "default"))();
+        export { test as default };"
+      `);
+    });
+    it('supports top-level directive with default export of arrow function variable', () => {
+      expect(
+        transformTest(`
+"use server";
+
+const test = async () => {
+}
+
+export default test;
+`).code
+      ).toMatchInlineSnapshot(`
+        "/*rsc/actions: {"id":"file:///unknown","names":["default"]}*/
+        import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+        const test = async () => {};
+        (() => _registerServerReference(test, "file:///unknown", "default"))();
+        export { test as default };"
+      `);
+    });
+    it('skips default exports of types', () => {
+      expect(
+        transformTest(
+          `
+"use server";
+type Test = {
+  foo: string;
+}
+export default Test;
+`,
+          {
+            filename: '/unknown.ts',
+          }
+        ).code
+      ).toMatchInlineSnapshot(`"export {};"`);
+    });
+    it('skips exports of type aliases', () => {
+      expect(
+        transformTest(
+          `
+"use server";
+
+export type Test = {
+  foo: string;
+}
+`,
+          {
+            filename: '/unknown.ts',
+          }
+        ).code
+      ).toMatchInlineSnapshot(
+        `"import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";"`
+      );
+    });
+  });
 });
 
 describe('assertions', () => {
@@ -389,6 +596,21 @@ describe('assertions', () => {
         4 |   }"
     `);
   });
+  it('asserts that server actions must be async functions (default export)', () => {
+    expect(() =>
+      transformTest(`
+  export default function foo() {
+      "use server"
+  }`)
+    ).toThrowErrorMatchingInlineSnapshot(`
+      "/unknown: functions marked with "use server" must be async
+        1 |
+      > 2 |   export default function foo() {
+          |                  ^
+        3 |       "use server"
+        4 |   }"
+    `);
+  });
   it('asserts that arrow-based server actions must be async', () => {
     expect(() =>
       transformTest(`
@@ -402,59 +624,6 @@ describe('assertions', () => {
           |               ^
         3 |       "use server"
         4 |   }"
-    `);
-  });
-
-  it('asserts top-level directive with default export of arrow function is not supported', () => {
-    expect(() =>
-      transformTest(`
-"use server";
-export default async (formData) => { 
-};`)
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/unknown: Not implemented: 'export default' declarations in "use server" files. Try using 'export { name as default }' instead.
-        1 |
-        2 | "use server";
-      > 3 | export default async (formData) => { 
-          | ^
-        4 | };"
-    `);
-  });
-
-  it('asserts top-level directive with default export of named function is not supported', () => {
-    expect(() =>
-      transformTest(`
-"use server";
-
-export default async function test() {
-}`)
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/unknown: Not implemented: 'export default' declarations in "use server" files. Try using 'export { name as default }' instead.
-        2 | "use server";
-        3 |
-      > 4 | export default async function test() {
-          | ^
-        5 | }"
-    `);
-  });
-
-  it('asserts top-level directive with default export of variable', () => {
-    expect(() =>
-      transformTest(`
-"use server";
-
-async function test() {
-}
-
-export default test;
-`)
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/unknown: Not implemented: 'export default' declarations in "use server" files. Try using 'export { name as default }' instead.
-        5 | }
-        6 |
-      > 7 | export default test;
-          | ^^^^^^^^^^^^^^^^^^^^
-        8 |"
     `);
   });
 });
@@ -483,7 +652,7 @@ function Something({ shared }) {
       };
     };
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION = _registerServerReference(async _$$CLOSURE => {
+    export var _$$INLINE_ACTION = _registerServerReference(async _$$CLOSURE => {
       var [shared] = _$$CLOSURE.value;
       return shared;
     }, "file:///unknown", "_$$INLINE_ACTION");
@@ -580,12 +749,12 @@ export const test4 = withAuth(async (x) => {
     };
     import { doSomethingOnTheServer } from "../server-stuff";
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION2 = _registerServerReference(async x => {
+    export var _$$INLINE_ACTION2 = _registerServerReference(async x => {
       return doSomethingOnTheServer(["inline-wrapped", x, SOME_CONSTANT]);
     }, "file:///unknown", "_$$INLINE_ACTION2");
     (() => _registerServerReference(_$$INLINE_ACTION2, "file:///unknown", "_$$INLINE_ACTION2"))();
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, ...args) => {
+    export var _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, ...args) => {
       var [fn] = _$$CLOSURE.value;
       console.log("checking auth");
       return fn(...args);
@@ -647,7 +816,7 @@ export const Test = ({ foo, bar }) => {
     import { doSomethingOnTheServer } from "../server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION2 = _registerServerReference(async (_$$CLOSURE2, data) => {
+    export var _$$INLINE_ACTION2 = _registerServerReference(async (_$$CLOSURE2, data) => {
       var [bar, foo] = _$$CLOSURE2.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -660,7 +829,7 @@ export const Test = ({ foo, bar }) => {
       };
     }, "file:///unknown", "_$$INLINE_ACTION2");
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, data) => {
+    export var _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, data) => {
       var [foo] = _$$CLOSURE.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -726,7 +895,7 @@ export const Test = ({ foo }) => {
     import { doSomethingOnTheServer } from "../server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, data) => {
+    export var _$$INLINE_ACTION = _registerServerReference(async (_$$CLOSURE, data) => {
       var [foo] = _$$CLOSURE.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -753,6 +922,126 @@ export const Test = ({ foo }) => {
       });
     };"
   `);
+});
+
+it('supports function server actions binding in order with extraneous imports at the end of the file', () => {
+  const code = transformTest(`
+    async function innerAction() {
+      "use server";
+    }
+
+    function wrapAction() {
+      return innerAction.bind(null, {});
+    }
+
+      // The extraneous import shifts the import to the wrong place
+      import "foo"
+    `).code;
+  expect(code).toMatchInlineSnapshot(`
+    "/*rsc/actions: {"id":"file:///unknown","names":["_$$INLINE_ACTION"]}*/
+    import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+    // hoisted action: innerAction
+    export var _$$INLINE_ACTION = _registerServerReference(async function innerAction() {}, "file:///unknown", "_$$INLINE_ACTION");
+    var innerAction = _$$INLINE_ACTION;
+    function wrapAction() {
+      return innerAction.bind(null, {});
+    }
+
+    // The extraneous import shifts the import to the wrong place
+    import "foo";"
+  `);
+
+  // find the first line where 'var innerAction = _$$INLINE_ACTION;' is defined
+  const INLINE_ACTION = code
+    .split('\n')
+    .findIndex((line) => line.includes(' innerAction = _$$INLINE_ACTION;'));
+
+  // find the first line where 'var _$$INLINE_ACTION =' is defined
+  const INLINE_ACTION_DECLARATION = code
+    .split('\n')
+    .findIndex((line) => line.includes(' _$$INLINE_ACTION ='));
+
+  expect(INLINE_ACTION_DECLARATION).toBeLessThan(INLINE_ACTION);
+});
+
+it('supports arrow function server actions binding in order with extraneous imports at the end of the file', () => {
+  const code = transformTest(`    
+    const innerAction = async () => {
+      "use server";
+    }
+    
+    function wrapAction() {
+      return innerAction.bind(null, {});
+    }
+    
+      // The extraneous import shifts the import to the wrong place
+      import "foo"
+    `).code;
+  expect(code).toMatchInlineSnapshot(`
+    "/*rsc/actions: {"id":"file:///unknown","names":["_$$INLINE_ACTION"]}*/
+    import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+    // hoisted action: <anonymous>
+    export var _$$INLINE_ACTION = _registerServerReference(async () => {}, "file:///unknown", "_$$INLINE_ACTION");
+    const innerAction = _$$INLINE_ACTION;
+    function wrapAction() {
+      return innerAction.bind(null, {});
+    }
+
+    // The extraneous import shifts the import to the wrong place
+    import "foo";"
+  `);
+
+  // find the first line where 'var innerAction = _$$INLINE_ACTION;' is defined
+  const INLINE_ACTION = code
+    .split('\n')
+    .findIndex((line) => line.includes(' innerAction = _$$INLINE_ACTION;'));
+
+  // find the first line where 'var _$$INLINE_ACTION =' is defined
+  const INLINE_ACTION_DECLARATION = code
+    .split('\n')
+    .findIndex((line) => line.includes(' _$$INLINE_ACTION ='));
+
+  expect(INLINE_ACTION_DECLARATION).toBeLessThan(INLINE_ACTION);
+});
+
+it('supports function expression server actions binding in order with extraneous imports at the end of the file', () => {
+  const code = transformTest(`    
+    const innerAction = async function() {
+      "use server";
+    }
+    
+    function wrapAction() {
+      return innerAction.bind(null, {});
+    }
+    
+      // The extraneous import shifts the import to the wrong place
+      import "foo"
+    `).code;
+  expect(code).toMatchInlineSnapshot(`
+    "/*rsc/actions: {"id":"file:///unknown","names":["_$$INLINE_ACTION"]}*/
+    import { registerServerReference as _registerServerReference } from "react-server-dom-webpack/server";
+    // hoisted action: <anonymous>
+    export var _$$INLINE_ACTION = _registerServerReference(async function () {}, "file:///unknown", "_$$INLINE_ACTION");
+    const innerAction = _$$INLINE_ACTION;
+    function wrapAction() {
+      return innerAction.bind(null, {});
+    }
+
+    // The extraneous import shifts the import to the wrong place
+    import "foo";"
+  `);
+
+  // find the first line where 'var innerAction = _$$INLINE_ACTION;' is defined
+  const INLINE_ACTION = code
+    .split('\n')
+    .findIndex((line) => line.includes(' innerAction = _$$INLINE_ACTION;'));
+
+  // find the first line where 'var _$$INLINE_ACTION =' is defined
+  const INLINE_ACTION_DECLARATION = code
+    .split('\n')
+    .findIndex((line) => line.includes(' _$$INLINE_ACTION ='));
+
+  expect(INLINE_ACTION_DECLARATION).toBeLessThan(INLINE_ACTION);
 });
 
 it('supports nested server actions', () => {
@@ -800,12 +1089,12 @@ export const Test = ({ foo }) => {
     import "./server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: <anonymous>
-    export const _$$INLINE_ACTION2 = _registerServerReference(async _$$CLOSURE2 => {
+    export var _$$INLINE_ACTION2 = _registerServerReference(async _$$CLOSURE2 => {
       var [foo1] = _$$CLOSURE2.value;
       console.log("hi from nested!", foo1);
     }, "file:///unknown", "_$$INLINE_ACTION2");
     // hoisted action: doStuff
-    export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+    export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
       var [foo1] = _$$CLOSURE.value;
       const nested = _$$INLINE_ACTION2.bind(null, _wrapBoundArgs(() => [foo1]));
       await nested();
@@ -867,7 +1156,7 @@ export const Test = ({ foo }) => {
     import { doSomethingOnTheServer } from "../server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: doStuff
-    export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+    export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
       var [foo] = _$$CLOSURE.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -930,7 +1219,7 @@ export const Test = ({ foo }) => {
     import { doSomethingOnTheServer } from "../server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: doStuff
-    export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+    export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
       var [foo] = _$$CLOSURE.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -993,7 +1282,7 @@ export const Test = ({ foo }) => {
     import { doSomethingOnTheServer } from "../server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: doStuff
-    export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+    export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
       var [foo2, x] = _$$CLOSURE.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -1064,13 +1353,8 @@ export const Test = ({ foo }) => {
     };
     import { doSomethingOnTheServer } from "../server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-    // hoisted action: doStuffWrapped
-    export const _$$INLINE_ACTION2 = _registerServerReference(async function doStuffWrapped(_$$CLOSURE2, data) {
-      var [doStuff] = _$$CLOSURE2.value;
-      return doStuff(data);
-    }, "file:///unknown", "_$$INLINE_ACTION2");
     // hoisted action: doStuff
-    export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+    export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
       var [foo2] = _$$CLOSURE.value;
       const test = data.get("test");
       await doSomethingOnTheServer({
@@ -1081,6 +1365,11 @@ export const Test = ({ foo }) => {
         success: true
       };
     }, "file:///unknown", "_$$INLINE_ACTION");
+    // hoisted action: doStuffWrapped
+    export var _$$INLINE_ACTION2 = _registerServerReference(async function doStuffWrapped(_$$CLOSURE2, data) {
+      var [doStuff] = _$$CLOSURE2.value;
+      return doStuff(data);
+    }, "file:///unknown", "_$$INLINE_ACTION2");
     export const Test = ({
       foo
     }) => {
@@ -1155,7 +1444,7 @@ export const Test = ({ foo }) => {
     import "./server-stuff";
     import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
     // hoisted action: doStuff
-    export const _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
+    export var _$$INLINE_ACTION = _registerServerReference(async function doStuff(_$$CLOSURE, data) {
       var [foo2] = _$$CLOSURE.value;
       const test = data.get("test");
       if (Math.random() > 0.5) {

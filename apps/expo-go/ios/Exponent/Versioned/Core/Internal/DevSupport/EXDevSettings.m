@@ -10,6 +10,8 @@ NSString *const kRCTDevSettingHotLoadingEnabled = @"hotLoadingEnabled";
 
 @implementation EXDevSettings
 
+@synthesize bridge = _bridge;
+
 + (NSString *)moduleName { return @"RCTDevSettings"; }
 
 - (instancetype)initWithScopeKey:(NSString *)scopeKey isDevelopment:(BOOL)isDevelopment
@@ -28,17 +30,6 @@ NSString *const kRCTDevSettingHotLoadingEnabled = @"hotLoadingEnabled";
 - (NSArray<NSString *> *)supportedEvents
 {
   return [super supportedEvents];
-}
-
-- (BOOL)isRemoteDebuggingAvailable
-{
-  NSString *bridgeDescription = [self.bridge valueForKey:@"_bridgeDescription"];
-  BOOL isHermesRuntime = [bridgeDescription containsString:@"HermesRuntime"];
-  if (isHermesRuntime) {
-    // Disable remote debugging when running on Hermes
-    return NO;
-  }
-  return [super isRemoteDebuggingAvailable];
 }
 
 @end

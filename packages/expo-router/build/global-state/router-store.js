@@ -1,3 +1,4 @@
+'use client';
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -29,16 +30,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.useInitializeExpoRouter = exports.useStoreRouteInfo = exports.useStoreRootState = exports.useExpoRouter = exports.store = exports.RouterStore = void 0;
 const native_1 = require("@react-navigation/native");
 const expo_constants_1 = __importDefault(require("expo-constants"));
-const SplashScreen = __importStar(require("expo-splash-screen"));
+const Linking = __importStar(require("expo-linking"));
+const fast_deep_equal_1 = __importDefault(require("fast-deep-equal"));
 const react_1 = require("react");
 const react_native_1 = require("react-native");
 const routing_1 = require("./routing");
 const sort_routes_1 = require("./sort-routes");
 const LocationProvider_1 = require("../LocationProvider");
 const getPathFromState_1 = require("../fork/getPathFromState");
+const getStateFromPath_forks_1 = require("../fork/getStateFromPath-forks");
 const getLinkingConfig_1 = require("../getLinkingConfig");
+const getReactNavigationConfig_1 = require("../getReactNavigationConfig");
 const getRoutes_1 = require("../getRoutes");
+const getRoutesRedirects_1 = require("../getRoutesRedirects");
+const href_1 = require("../link/href");
 const useScreens_1 = require("../useScreens");
+const url_1 = require("../utils/url");
+const SplashScreen = __importStar(require("../views/Splash"));
 /**
  * This is the global state for the router. It is used to keep track of the current route, and to provide a way to navigate to other routes.
  *
@@ -54,6 +62,9 @@ class RouterStore {
     nextState;
     routeInfo;
     splashScreenAnimationFrame;
+    // The expo-router config plugin
+    config;
+    redirects;
     navigationRef;
     navigationRefSubscription;
     rootStateSubscribers = new Set();
@@ -64,11 +75,13 @@ class RouterStore {
     canGoBack = routing_1.canGoBack.bind(this);
     push = routing_1.push.bind(this);
     dismiss = routing_1.dismiss.bind(this);
+    dismissTo = routing_1.dismissTo.bind(this);
     replace = routing_1.replace.bind(this);
     dismissAll = routing_1.dismissAll.bind(this);
     canDismiss = routing_1.canDismiss.bind(this);
     setParams = routing_1.setParams.bind(this);
     navigate = routing_1.navigate.bind(this);
+    reload = routing_1.reload.bind(this);
     initialize(context, navigationRef, linkingConfigOptions = {}) {
         // Clean up any previous state
         this.initialState = undefined;
@@ -78,6 +91,18 @@ class RouterStore {
         this.navigationRefSubscription?.();
         this.rootStateSubscribers.clear();
         this.storeSubscribers.clear();
+        this.config = expo_constants_1.default.expoConfig?.extra?.router;
+        // On the client, there is no difference between redirects and rewrites
+        this.redirects = [this.config?.redirects, this.config?.rewrites]
+            .filter(Boolean)
+            .flat()
+            .map((route) => {
+            return [
+                (0, getStateFromPath_forks_1.routePatternToRegex)((0, getReactNavigationConfig_1.parseRouteSegments)(route.source)),
+                route,
+                (0, url_1.shouldLinkExternally)(route.destination),
+            ];
+        });
         this.routeNode = (0, getRoutes_1.getRoutes)(context, {
             ...expo_constants_1.default.expoConfig?.extra?.router,
             ignoreEntryPoints: true,
@@ -95,7 +120,10 @@ class RouterStore {
         };
         if (this.routeNode) {
             // We have routes, so get the linking config and the root component
-            this.linking = (0, getLinkingConfig_1.getLinkingConfig)(this, this.routeNode, context, linkingConfigOptions);
+            this.linking = (0, getLinkingConfig_1.getLinkingConfig)(this, this.routeNode, context, {
+                ...expo_constants_1.default.expoConfig?.extra?.router,
+                ...linkingConfigOptions,
+            });
             this.rootComponent = (0, useScreens_1.getQualifiedRouteComponent)(this.routeNode);
             // By default React Navigation is async and does not render anything in the first pass as it waits for `getInitialURL`
             // This will cause static rendering to fail, which once performs a single pass.
@@ -135,7 +163,6 @@ class RouterStore {
                 this.hasAttemptedToHideSplash = true;
                 // NOTE(EvanBacon): `navigationRef.isReady` is sometimes not true when state is called initially.
                 this.splashScreenAnimationFrame = requestAnimationFrame(() => {
-                    // @ts-expect-error: This function is native-only and for internal-use only.
                     SplashScreen._internal_maybeHideAsync?.();
                 });
             }
@@ -162,7 +189,7 @@ class RouterStore {
         exports.store.rootState = state;
         exports.store.nextState = nextState;
         const nextRouteInfo = exports.store.getRouteInfo(state);
-        if (!(0, getPathFromState_1.deepEqual)(this.routeInfo, nextRouteInfo)) {
+        if (!(0, fast_deep_equal_1.default)(this.routeInfo, nextRouteInfo)) {
             exports.store.routeInfo = nextRouteInfo;
         }
     }
@@ -173,6 +200,7 @@ class RouterStore {
                 ...this.linking?.config,
                 preserveDynamicRoutes: asPath,
                 preserveGroups: asPath,
+                shouldEncodeURISegment: false,
             });
         }, state);
     }
@@ -203,6 +231,31 @@ class RouterStore {
         if (this.splashScreenAnimationFrame) {
             cancelAnimationFrame(this.splashScreenAnimationFrame);
         }
+    }
+    getStateFromPath(href, options = {}) {
+        href = (0, href_1.resolveHref)(href);
+        href = (0, href_1.resolveHrefStringWithSegments)(href, this.routeInfo, options);
+        return this.linking?.getStateFromPath?.(href, this.linking.config);
+    }
+    applyRedirects(url) {
+        if (typeof url !== 'string') {
+            return url;
+        }
+        const nextUrl = (0, getStateFromPath_forks_1.cleanPath)(url);
+        const redirect = this.redirects?.find(([regex]) => regex.test(nextUrl));
+        if (!redirect) {
+            return url;
+        }
+        // If the redirect is external, open the URL
+        if (redirect[2]) {
+            let href = redirect[1].destination;
+            if (href.startsWith('//') && react_native_1.Platform.OS !== 'web') {
+                href = `https:${href}`;
+            }
+            Linking.openURL(href);
+            return;
+        }
+        return this.applyRedirects((0, getRoutesRedirects_1.convertRedirect)(url, redirect[1]));
     }
 }
 exports.RouterStore = RouterStore;

@@ -9,13 +9,18 @@ import type {
   DeviceResponse,
 } from '../types';
 
+/**
+ * The global network response storage, as a workaround for the network inspector.
+ * @see createDebugMiddleware#createNetworkWebsocket
+ */
+export const NETWORK_RESPONSE_STORAGE = new Map<
+  string,
+  DebuggerResponse<NetworkGetResponseBody>['result']
+>();
+
 export class NetworkResponseHandler extends MessageHandler {
   /** All known responses, mapped by request id */
-  storage = new Map<string, DebuggerResponse<NetworkGetResponseBody>['result']>();
-
-  isEnabled() {
-    return this.page.capabilities.nativeNetworkInspection !== true;
-  }
+  storage = NETWORK_RESPONSE_STORAGE;
 
   handleDeviceMessage(message: DeviceRequest<NetworkReceivedResponseBody>) {
     if (message.method === 'Expo(Network.receivedResponseBody)') {

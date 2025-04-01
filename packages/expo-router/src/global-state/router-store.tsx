@@ -1,10 +1,12 @@
+'use client';
+
 import {
   NavigationContainerRefWithCurrent,
-  getPathFromState,
   useNavigationContainerRef,
 } from '@react-navigation/native';
 import Constants from 'expo-constants';
-import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
+import equal from 'fast-deep-equal';
 import { useSyncExternalStore, useMemo, ComponentType, Fragment } from 'react';
 import { Platform } from 'react-native';
 
@@ -17,18 +19,29 @@ import {
   dismiss,
   dismissAll,
   push,
+  reload,
   replace,
   setParams,
+  dismissTo,
+  LinkToOptions,
 } from './routing';
 import { getSortedRoutes } from './sort-routes';
 import { UrlObject, getRouteInfoFromState } from '../LocationProvider';
 import { RouteNode } from '../Route';
-import { deepEqual, getPathDataFromState } from '../fork/getPathFromState';
-import { ResultState } from '../fork/getStateFromPath';
+import { getPathDataFromState, getPathFromState } from '../fork/getPathFromState';
+import { cleanPath, routePatternToRegex } from '../fork/getStateFromPath-forks';
 import { ExpoLinkingOptions, LinkingConfigOptions, getLinkingConfig } from '../getLinkingConfig';
+import { parseRouteSegments } from '../getReactNavigationConfig';
 import { getRoutes } from '../getRoutes';
-import { RequireContext } from '../types';
+import { RedirectConfig } from '../getRoutesCore';
+import { convertRedirect } from '../getRoutesRedirects';
+import { resolveHref, resolveHrefStringWithSegments } from '../link/href';
+import { Href, RequireContext } from '../types';
 import { getQualifiedRouteComponent } from '../useScreens';
+import { shouldLinkExternally } from '../utils/url';
+import * as SplashScreen from '../views/Splash';
+
+type ResultState = any;
 
 /**
  * This is the global state for the router. It is used to keep track of the current route, and to provide a way to navigate to other routes.
@@ -47,6 +60,10 @@ export class RouterStore {
   routeInfo?: UrlObject;
   splashScreenAnimationFrame?: number;
 
+  // The expo-router config plugin
+  config: any;
+  redirects?: (readonly [RegExp, RedirectConfig, boolean])[];
+
   navigationRef!: NavigationContainerRefWithCurrent<ReactNavigation.RootParamList>;
   navigationRefSubscription!: () => void;
 
@@ -59,11 +76,13 @@ export class RouterStore {
   canGoBack = canGoBack.bind(this);
   push = push.bind(this);
   dismiss = dismiss.bind(this);
+  dismissTo = dismissTo.bind(this);
   replace = replace.bind(this);
   dismissAll = dismissAll.bind(this);
   canDismiss = canDismiss.bind(this);
   setParams = setParams.bind(this);
   navigate = navigate.bind(this);
+  reload = reload.bind(this);
 
   initialize(
     context: RequireContext,
@@ -78,6 +97,19 @@ export class RouterStore {
     this.navigationRefSubscription?.();
     this.rootStateSubscribers.clear();
     this.storeSubscribers.clear();
+
+    this.config = Constants.expoConfig?.extra?.router;
+    // On the client, there is no difference between redirects and rewrites
+    this.redirects = [this.config?.redirects, this.config?.rewrites]
+      .filter(Boolean)
+      .flat()
+      .map((route) => {
+        return [
+          routePatternToRegex(parseRouteSegments(route.source)),
+          route,
+          shouldLinkExternally(route.destination),
+        ] as const;
+      });
 
     this.routeNode = getRoutes(context, {
       ...Constants.expoConfig?.extra?.router,
@@ -98,7 +130,10 @@ export class RouterStore {
 
     if (this.routeNode) {
       // We have routes, so get the linking config and the root component
-      this.linking = getLinkingConfig(this, this.routeNode, context, linkingConfigOptions);
+      this.linking = getLinkingConfig(this, this.routeNode, context, {
+        ...Constants.expoConfig?.extra?.router,
+        ...linkingConfigOptions,
+      });
       this.rootComponent = getQualifiedRouteComponent(this.routeNode);
 
       // By default React Navigation is async and does not render anything in the first pass as it waits for `getInitialURL`
@@ -141,7 +176,6 @@ export class RouterStore {
         this.hasAttemptedToHideSplash = true;
         // NOTE(EvanBacon): `navigationRef.isReady` is sometimes not true when state is called initially.
         this.splashScreenAnimationFrame = requestAnimationFrame(() => {
-          // @ts-expect-error: This function is native-only and for internal-use only.
           SplashScreen._internal_maybeHideAsync?.();
         });
       }
@@ -175,7 +209,7 @@ export class RouterStore {
 
     const nextRouteInfo = store.getRouteInfo(state);
 
-    if (!deepEqual(this.routeInfo, nextRouteInfo)) {
+    if (!equal(this.routeInfo, nextRouteInfo)) {
       store.routeInfo = nextRouteInfo;
     }
   }
@@ -188,6 +222,7 @@ export class RouterStore {
           ...this.linking?.config,
           preserveDynamicRoutes: asPath,
           preserveGroups: asPath,
+          shouldEncodeURISegment: false,
         });
       },
       state
@@ -223,6 +258,38 @@ export class RouterStore {
     if (this.splashScreenAnimationFrame) {
       cancelAnimationFrame(this.splashScreenAnimationFrame);
     }
+  }
+
+  getStateFromPath(href: Href, options: LinkToOptions = {}) {
+    href = resolveHref(href);
+    href = resolveHrefStringWithSegments(href, this.routeInfo, options);
+    return this.linking?.getStateFromPath?.(href, this.linking.config);
+  }
+
+  applyRedirects<T extends string | null | undefined>(url: T): T | undefined {
+    if (typeof url !== 'string') {
+      return url;
+    }
+
+    const nextUrl = cleanPath(url);
+    const redirect = this.redirects?.find(([regex]) => regex.test(nextUrl));
+
+    if (!redirect) {
+      return url;
+    }
+
+    // If the redirect is external, open the URL
+    if (redirect[2]) {
+      let href = redirect[1].destination as T & string;
+      if (href.startsWith('//') && Platform.OS !== 'web') {
+        href = `https:${href}` as T & string;
+      }
+
+      Linking.openURL(href);
+      return;
+    }
+
+    return this.applyRedirects<T>(convertRedirect(url, redirect[1]) as T);
   }
 }
 

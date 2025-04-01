@@ -1,4 +1,7 @@
+import { Platform } from 'react-native';
 import ExpoSQLite from './ExpoSQLite';
+import { flattenOpenOptions } from './NativeDatabase';
+import { SQLiteSession } from './SQLiteSession';
 import { SQLiteStatement, } from './SQLiteStatement';
 import { createDatabasePath } from './pathUtils';
 /**
@@ -53,6 +56,16 @@ export class SQLiteDatabase {
         return new SQLiteStatement(this.nativeDatabase, nativeStatement);
     }
     /**
+     * Create a new session for the database.
+     * @see [`sqlite3session_create`](https://www.sqlite.org/session/sqlite3session_create.html)
+     * @param dbName The name of the database to create a session for. The default value is `main`.
+     */
+    async createSessionAsync(dbName = 'main') {
+        const nativeSession = new ExpoSQLite.NativeSession();
+        await this.nativeDatabase.createSessionAsync(nativeSession, dbName);
+        return new SQLiteSession(this.nativeDatabase, nativeSession);
+    }
+    /**
      * Execute a transaction and automatically commit/rollback based on the `task` result.
      *
      * > **Note:** This transaction is not exclusive and can be interrupted by other async queries.
@@ -104,6 +117,9 @@ export class SQLiteDatabase {
      * ```
      */
     async withExclusiveTransactionAsync(task) {
+        if (Platform.OS === 'web') {
+            throw new Error('withExclusiveTransactionAsync is not supported on web');
+        }
         const transaction = await Transaction.createAsync(this);
         let error;
         try {
@@ -167,6 +183,19 @@ export class SQLiteDatabase {
         const nativeStatement = new ExpoSQLite.NativeStatement();
         this.nativeDatabase.prepareSync(nativeStatement, source);
         return new SQLiteStatement(this.nativeDatabase, nativeStatement);
+    }
+    /**
+     * Create a new session for the database.
+     * @see [`sqlite3session_create`](https://www.sqlite.org/session/sqlite3session_create.html)
+     *
+     * > **Note:** Running heavy tasks with this function can block the JavaScript thread and affect performance.
+     *
+     * @param dbName The name of the database to create a session for. The default value is `main`.
+     */
+    createSessionSync(dbName = 'main') {
+        const nativeSession = new ExpoSQLite.NativeSession();
+        this.nativeDatabase.createSessionSync(nativeSession, dbName);
+        return new SQLiteSession(this.nativeDatabase, nativeSession);
     }
     /**
      * Execute a transaction and automatically commit/rollback based on the `task` result.
@@ -280,6 +309,16 @@ export class SQLiteDatabase {
         }
         return allRows;
     }
+    /**
+     * Synchronize the local database with the remote libSQL server.
+     * This method is only available from libSQL integration.
+     */
+    syncLibSQL() {
+        if (typeof this.nativeDatabase.syncLibSQL !== 'function') {
+            throw new Error('syncLibSQL is not supported in the current environment');
+        }
+        return this.nativeDatabase.syncLibSQL();
+    }
 }
 /**
  * The default directory for SQLite databases.
@@ -296,7 +335,7 @@ export async function openDatabaseAsync(databaseName, options, directory) {
     const openOptions = options ?? {};
     const databasePath = createDatabasePath(databaseName, directory);
     await ExpoSQLite.ensureDatabasePathExistsAsync(databasePath);
-    const nativeDatabase = new ExpoSQLite.NativeDatabase(databasePath, openOptions);
+    const nativeDatabase = new ExpoSQLite.NativeDatabase(databasePath, flattenOpenOptions(openOptions));
     await nativeDatabase.initAsync();
     return new SQLiteDatabase(databasePath, openOptions, nativeDatabase);
 }
@@ -313,7 +352,7 @@ export function openDatabaseSync(databaseName, options, directory) {
     const openOptions = options ?? {};
     const databasePath = createDatabasePath(databaseName, directory);
     ExpoSQLite.ensureDatabasePathExistsSync(databasePath);
-    const nativeDatabase = new ExpoSQLite.NativeDatabase(databasePath, openOptions);
+    const nativeDatabase = new ExpoSQLite.NativeDatabase(databasePath, flattenOpenOptions(openOptions));
     nativeDatabase.initSync();
     return new SQLiteDatabase(databasePath, openOptions, nativeDatabase);
 }
@@ -325,7 +364,7 @@ export function openDatabaseSync(databaseName, options, directory) {
  */
 export async function deserializeDatabaseAsync(serializedData, options) {
     const openOptions = options ?? {};
-    const nativeDatabase = new ExpoSQLite.NativeDatabase(':memory:', openOptions, serializedData);
+    const nativeDatabase = new ExpoSQLite.NativeDatabase(':memory:', flattenOpenOptions(openOptions), serializedData);
     await nativeDatabase.initAsync();
     return new SQLiteDatabase(':memory:', openOptions, nativeDatabase);
 }
@@ -339,7 +378,7 @@ export async function deserializeDatabaseAsync(serializedData, options) {
  */
 export function deserializeDatabaseSync(serializedData, options) {
     const openOptions = options ?? {};
-    const nativeDatabase = new ExpoSQLite.NativeDatabase(':memory:', openOptions, serializedData);
+    const nativeDatabase = new ExpoSQLite.NativeDatabase(':memory:', flattenOpenOptions(openOptions), serializedData);
     nativeDatabase.initSync();
     return new SQLiteDatabase(':memory:', openOptions, nativeDatabase);
 }
@@ -366,6 +405,34 @@ export function deleteDatabaseSync(databaseName, directory) {
     return ExpoSQLite.deleteDatabaseSync(databasePath);
 }
 /**
+ * Backup a database to another database.
+ *
+ * @see https://www.sqlite.org/c3ref/backup_finish.html
+ *
+ * @param sourceDatabase The source database to backup from.
+ * @param sourceDatabaseName The name of the source database. The default value is `main`.
+ * @param destDatabase The destination database to backup to.
+ * @param destDatabaseName The name of the destination database. The default value is `main`.
+ */
+export function backupDatabaseAsync({ sourceDatabase, sourceDatabaseName, destDatabase, destDatabaseName, }) {
+    return ExpoSQLite.backupDatabaseAsync(destDatabase.nativeDatabase, destDatabaseName ?? 'main', sourceDatabase.nativeDatabase, sourceDatabaseName ?? 'main');
+}
+/**
+ * Backup a database to another database.
+ *
+ * @see https://www.sqlite.org/c3ref/backup_finish.html
+ *
+ * > **Note:** Running heavy tasks with this function can block the JavaScript thread and affect performance.
+ *
+ * @param sourceDatabase The source database to backup from.
+ * @param sourceDatabaseName The name of the source database. The default value is `main`.
+ * @param destDatabase The destination database to backup to.
+ * @param destDatabaseName The name of the destination database. The default value is `main`.
+ */
+export function backupDatabaseSync({ sourceDatabase, sourceDatabaseName, destDatabase, destDatabaseName, }) {
+    return ExpoSQLite.backupDatabaseSync(destDatabase.nativeDatabase, destDatabaseName ?? 'main', sourceDatabase.nativeDatabase, sourceDatabaseName ?? 'main');
+}
+/**
  * Add a listener for database changes.
  * > Note: to enable this feature, you must set [`enableChangeListener` to `true`](#sqliteopenoptions) when opening the database.
  *
@@ -382,7 +449,7 @@ export function addDatabaseChangeListener(listener) {
 class Transaction extends SQLiteDatabase {
     static async createAsync(db) {
         const options = { ...db.options, useNewConnection: true };
-        const nativeDatabase = new ExpoSQLite.NativeDatabase(db.databasePath, options);
+        const nativeDatabase = new ExpoSQLite.NativeDatabase(db.databasePath, flattenOpenOptions(options));
         await nativeDatabase.initAsync();
         return new Transaction(db.databasePath, options, nativeDatabase);
     }

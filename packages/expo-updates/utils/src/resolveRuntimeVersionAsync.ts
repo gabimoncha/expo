@@ -1,6 +1,6 @@
 import { getConfig } from '@expo/config';
 import { Updates } from '@expo/config-plugins';
-import * as Fingerprint from '@expo/fingerprint';
+import * as Fingerprint from 'expo/fingerprint';
 
 import { createFingerprintAsync } from './createFingerprintAsync';
 import { Workflow, resolveWorkflowAsync } from './workflow';
@@ -28,6 +28,11 @@ export async function resolveRuntimeVersionAsync(
     return { runtimeVersion: runtimeVersion ?? null, fingerprintSources: null, workflow };
   }
 
+  if (typeof runtimeVersion !== 'object' || Array.isArray(runtimeVersion)) {
+    throw new Error(
+      `Invalid runtime version: ${JSON.stringify(runtimeVersion)}. Expected a string or an object with a "policy" key. https://docs.expo.dev/eas-update/runtime-versions`
+    );
+  }
   const policy = runtimeVersion.policy;
 
   if (policy === 'fingerprint') {

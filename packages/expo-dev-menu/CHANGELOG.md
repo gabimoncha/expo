@@ -4,6 +4,127 @@
 
 ### 🛠 Breaking changes
 
+- upgrade RN to 0.78 ([#35050](https://github.com/expo/expo/pull/35050) by [@vonovak](https://github.com/vonovak))
+
+### 🎉 New features
+
+- support react-native 0.77 ([#33946](https://github.com/expo/expo/pull/33946) by [@vonovak](https://github.com/vonovak))
+
+### 🐛 Bug fixes
+
+- [ios] Fixed build errors in XCode 16.3 ([#35811](https://github.com/expo/expo/pull/35811) by [@chrfalch](https://github.com/chrfalch))
+- [Android] Fixed `task ':expo-dev-menu:generateDebugLintModel' uses this output of task ':expo-dev-menu:copyAssets' without declaring an explicit or implicit dependency`. ([#34688](https://github.com/expo/expo/pull/34688) by [@lukmccall](https://github.com/lukmccall))
+- [iOS] Add `ReactAppDependencyProvider` as a dependency when running React Native 0.77. ([#35092](https://github.com/expo/expo/pull/35092) by [@alanjhughes](https://github.com/alanjhughes))
+
+### 💡 Others
+
+- use custom iOS dependencyProvider ([#35321](https://github.com/expo/expo/pull/35321) by [@vonovak](https://github.com/vonovak))
+- [6/n] upgrade to react-native 0.77 - improve 0.76 compatibility ([#34078](https://github.com/expo/expo/pull/34078) by [@vonovak](https://github.com/vonovak))
+- Fixed broken local UI development on Android. ([#33714](https://github.com/expo/expo/pull/33714) by [@kudo](https://github.com/kudo))
+- Fixed compatibility for React Native 0.78 nightlies. ([#33718](https://github.com/expo/expo/pull/33718) by [@kudo](https://github.com/kudo))
+- [Android] Started using expo modules gradle plugin. ([#34176](https://github.com/expo/expo/pull/34176) by [@lukmccall](https://github.com/lukmccall))
+- [apple] Migrate remaining `expo-module.config.json` to unified platform syntax. ([#34445](https://github.com/expo/expo/pull/34445) by [@reichhartd](https://github.com/reichhartd))
+- Removed remote debugging dead code. ([#34977](https://github.com/expo/expo/pull/34977) by [@kudo](https://github.com/kudo))
+- Refactored `RCTReactNativeFactory` integration. ([#35679](https://github.com/expo/expo/pull/35679) by [@kudo](https://github.com/kudo))
+
+## 6.0.22 - 2025-03-31
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.19 - 2025-02-06
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.16 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.15 - 2024-12-30
+
+### 🐛 Bug fixes
+
+- Fixed performance monitor does not show on iOS. ([#33855](https://github.com/expo/expo/pull/33855) by [@kudo](https://github.com/kudo))
+
+## 6.0.14 - 2024-12-10
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.13 - 2024-11-29
+
+### 💡 Others
+
+- Fixed compatibility for React Native 0.77. ([#33277](https://github.com/expo/expo/pull/33277) by [@kudo](https://github.com/kudo))
+
+## 6.0.12 — 2024-11-22
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.11 — 2024-11-22
+
+### 💡 Others
+
+- Introduced `ReactNativeFeatureFlags` compat to fix React Native 0.77 breaking changes. ([#33077](https://github.com/expo/expo/pull/33077) by [@kudo](https://github.com/kudo))
+
+## 6.0.10 — 2024-11-15
+
+### 🐛 Bug fixes
+
+- [iOS] Fixed issue where `UIWindow` was called on off the main thread. ([#29559](https://github.com/expo/expo/pull/29559) by [@hakonk](https://github.com/hakonk))
+
+## 6.0.9 — 2024-11-14
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.8 — 2024-11-11
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.7 — 2024-11-07
+
+### 🐛 Bug fixes
+
+- [Android] Fixed mutiple reload when pressing `r` in CLI on react-native old architecture mode. ([#32532](https://github.com/expo/expo/pull/32532) by [@kudo](https://github.com/kudo))
+
+## 6.0.6 — 2024-11-04
+
+### 💡 Others
+
+- Remove unused `graphql` dependencies. ([#32065](https://github.com/expo/expo/pull/32065) by [@kitten](https://github.com/kitten))
+
+## 6.0.5 — 2024-10-29
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.4 — 2024-10-29
+
+### 💡 Others
+
+- Add module mocks. ([#32412](https://github.com/expo/expo/pull/32412) by [@aleqsio](https://github.com/aleqsio))
+
+## 6.0.3 — 2024-10-25
+
+### 🐛 Bug fixes
+
+- [iOS] Fix build failure on 0.76 with use frameworks. ([#32341](https://github.com/expo/expo/pull/32341) by [@matinzd](https://github.com/matinzd))
+
+### 💡 Others
+
+- Skipped internal bundles from debugging targets. ([#32322](https://github.com/expo/expo/pull/32322) by [@kudo](https://github.com/kudo))
+
+## 6.0.2 — 2024-10-24
+
+### 🎉 New features
+
+- Add support for react-native 0.76 ([#32285](https://github.com/expo/expo/pull/32285) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+
+## 6.0.1 — 2024-10-22
+
+_This version does not introduce any user-facing changes._
+
+## 6.0.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
 - Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840), [#30861](https://github.com/expo/expo/pull/30861) by [@tsapeta](https://github.com/tsapeta))
 
 ### 🎉 New features
@@ -20,6 +141,8 @@
 
 - Removed `expo_patch_react_imports!` and align more stardard react-native project layout. ([#31700](https://github.com/expo/expo/pull/31700) by [@kudo](https://github.com/kudo))
 - Removed deprecated code for SDK 49. ([#31740](https://github.com/expo/expo/pull/31740) by [@kudo](https://github.com/kudo))
+- Remove unused `semver` dependency. ([#32063](https://github.com/expo/expo/pull/32063) by [@kitten](https://github.com/kitten))
+- Fixed broken unit tests since React Native 0.76 bump. ([#32210](https://github.com/expo/expo/pull/32210) by [@kudo](https://github.com/kudo))
 
 ### 📚 3rd party library updates
 

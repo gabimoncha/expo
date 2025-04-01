@@ -8,7 +8,7 @@ exports.reactClientReferencesPlugin = void 0;
  * Copyright © 2024 650 Industries.
  */
 const core_1 = require("@babel/core");
-const url_1 = __importDefault(require("url"));
+const node_url_1 = __importDefault(require("node:url"));
 const common_1 = require("./common");
 function reactClientReferencesPlugin(api) {
     const isReactServer = api.caller(common_1.getIsReactServer);
@@ -32,7 +32,7 @@ function reactClientReferencesPlugin(api) {
                     // This can happen in tests or systems that use Babel standalone.
                     throw new Error('[Babel] Expected a filename to be set in the state');
                 }
-                const outputKey = url_1.default.pathToFileURL(filePath).href;
+                const outputKey = node_url_1.default.pathToFileURL(filePath).href;
                 function iterateExports(callback, type) {
                     const exportNames = new Set();
                     // Collect all of the exports
@@ -62,7 +62,12 @@ function reactClientReferencesPlugin(api) {
                                         callback(exportName);
                                     }
                                 }
-                                else if (!['InterfaceDeclaration', 'TSTypeAliasDeclaration', 'TypeAlias'].includes(exportPath.node.declaration.type)) {
+                                else if (![
+                                    'InterfaceDeclaration',
+                                    'TSInterfaceDeclaration',
+                                    'TSTypeAliasDeclaration',
+                                    'TypeAlias',
+                                ].includes(exportPath.node.declaration.type)) {
                                     // TODO: What is this type?
                                     console.warn(`[babel-preset-expo] Unsupported export specifier for "use ${type}":`, exportPath.node.declaration.type);
                                 }
@@ -129,7 +134,8 @@ function reactClientReferencesPlugin(api) {
                         return;
                     }
                     // HACK: Mock out the polyfill that doesn't run through the normal bundler pipeline.
-                    if (filePath.endsWith('@react-native/js-polyfills/console.js')) {
+                    if (filePath.endsWith('@react-native/js-polyfills/console.js') ||
+                        filePath.endsWith('@react-native\\js-polyfills\\console.js')) {
                         // Clear the body
                         path.node.body = [];
                         path.node.directives = [];

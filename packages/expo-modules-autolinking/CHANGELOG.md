@@ -4,6 +4,95 @@
 
 ### 🛠 Breaking changes
 
+- Refactored how declaring multiple Android projects works. ([#35138](https://github.com/expo/expo/pull/35138) by [@lukmccall](https://github.com/lukmccall))
+
+### 🎉 New features
+
+- Added `coreFeatures` field. ([#34015](https://github.com/expo/expo/pull/34015) by [@lukmccall](https://github.com/lukmccall))
+- Add macOS support. ([#35065](https://github.com/expo/expo/pull/35065) by [@gabrieldonadel](https://github.com/gabrieldonadel))
+- [Android] Added `expoAutolinking.useExpoVersionCatalog` and `expoAutolinking.reactNativeGradlePlugin`. ([#35789](https://github.com/expo/expo/pull/35789) by [@lukmccall](https://github.com/lukmccall))
+
+### 🐛 Bug fixes
+
+### 💡 Others
+
+- [Android] Introduced the Gradle plugin to improve the autolinking setup. ([#33402](https://github.com/expo/expo/pull/33402) by [@lukmccall](https://github.com/lukmccall))
+- Drop `fs-extra` in favor of `fs`. ([#35036](https://github.com/expo/expo/pull/35036) by [@kitten](https://github.com/kitten))
+- Drop `fast-glob` in favor of `glob`. ([#35082](https://github.com/expo/expo/pull/35082) by [@kitten](https://github.com/kitten))
+- [Android] Added `publication` configuration. ([#35068](https://github.com/expo/expo/pull/35068) by [@lukmccall](https://github.com/lukmccall))
+- Removed legacy `modulesClassNames` field. ([#35095](https://github.com/expo/expo/pull/35095) by [@lukmccall](https://github.com/lukmccall))
+
+## 2.0.8 - 2025-02-19
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.7 - 2025-01-20
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.6 - 2025-01-19
+
+### 🐛 Bug fixes
+
+- Added Android `BaseReactPackage` for autolinking. ([#33773](https://github.com/expo/expo/pull/33773) by [@vonovak](https://github.com/vonovak))
+- Resolve `reactNativePath` to its realpath to prevent incorrect relative paths from being generated for isolated dependencies. ([#34203](https://github.com/expo/expo/pull/34203) by [@kitten](https://github.com/kitten))
+
+## 2.0.5 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.4 - 2024-12-10
+
+### 🐛 Bug fixes
+
+- Fix incorrect `__dirname` in `react-native-config.(js|ts)` ([#33532](https://github.com/expo/expo/pull/33532) by [@satya164](https://github.com/satya164))
+
+### 💡 Others
+
+- Added library `android.sourceDir` support for react-native-config. ([#33473](https://github.com/expo/expo/pull/33473) by [@kudo](https://github.com/kudo))
+
+## 2.0.3 - 2024-12-02
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.2 — 2024-11-13
+
+### 🐛 Bug fixes
+
+- Fixed autolinking when `react-native-config` doesn't specify local dependencies. ([#32841](https://github.com/expo/expo/pull/32841) by [@thespacemanatee](https://github.com/thespacemanatee))
+
+## 2.0.1 — 2024-11-13
+
+### 💡 Others
+
+- Added local project dependencies support to `react-native-config` autolinking. ([#32821](https://github.com/expo/expo/pull/32821) by [@kudo](https://github.com/kudo))
+
+## 2.0.0 — 2024-11-11
+
+_This version does not introduce any user-facing changes._
+
+## 2.0.0-preview.3 — 2024-11-04
+
+### 🐛 Bug fixes
+
+- Fix issue when no dependencies in a package. ([#32547](https://github.com/expo/expo/pull/32547) by [@douglowder](https://github.com/douglowder))
+
+## 2.0.0-preview.2 — 2024-10-28
+
+### 🐛 Bug fixes
+
+- Fixed react-native core autolinking for react-native-unistyles on Android. ([#32375](https://github.com/expo/expo/pull/32375) by [@kudo](https://github.com/kudo))
+
+## 2.0.0-preview.1 — 2024-10-25
+
+### 🐛 Bug fixes
+
+- Fixed build error from `gradleAarProjects`. ([#32349](https://github.com/expo/expo/pull/32349) by [@kudo](https://github.com/kudo))
+
+## 2.0.0-preview.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
 - Removed the deprecated `generate-package-list` command for Apple platforms. ([#31518](https://github.com/expo/expo/pull/31518) by [@kudo](https://github.com/kudo))
 
 ### 🎉 New features
@@ -11,6 +100,7 @@
 - Added AAR files autolinking as Gradle projects. ([#30706](https://github.com/expo/expo/pull/30706) by [@kudo](https://github.com/kudo))
 - Add support for react-native 0.76 ([#31593](https://github.com/expo/expo/pull/31593) by [@gabrieldonadel](https://github.com/gabrieldonadel))
 - Added Apple code sign entitlements to generated `ExpoModulesProvider.swift`. ([#31518](https://github.com/expo/expo/pull/31518) by [@kudo](https://github.com/kudo))
+- Added `searchPaths` support to the `react-native-config`. ([#32153](https://github.com/expo/expo/pull/32153) by [@kudo](https://github.com/kudo))
 
 ### 🐛 Bug fixes
 
@@ -19,6 +109,7 @@
 - Fixed core autolinking for react-native-maps. ([#31190](https://github.com/expo/expo/pull/31190) by [@kudo](https://github.com/kudo))
 - Fixed broken `searchPaths` from package.json. ([#31196](https://github.com/expo/expo/pull/31196) by [@kudo](https://github.com/kudo))
 - Fixed `react-native-config` error when running on CNG projects without Android native files. ([#31637](https://github.com/expo/expo/pull/31637) by [@kudo](https://github.com/kudo))
+- Fixed `react-native-config` can't resolve version of the `@react-native-community/cli-platform-android`. ([#32205](https://github.com/expo/expo/pull/32205) by [@lukmccall](https://github.com/lukmccall))
 
 ### 💡 Others
 

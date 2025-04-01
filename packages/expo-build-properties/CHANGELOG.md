@@ -4,15 +4,32 @@
 
 ### 🛠 Breaking changes
 
-- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
-
 ### 🎉 New features
+
+- Add `android.useDayNightTheme` to enable overriding the templates use of a light theme. ([#33989](https://github.com/expo/expo/pull/33989) by [@alanjhughes](https://github.com/alanjhughes))
 
 ### 🐛 Bug fixes
 
 ### 💡 Others
 
+## 0.13.2 - 2025-01-10
+
+_This version does not introduce any user-facing changes._
+
+## 0.13.1 — 2024-10-24
+
+_This version does not introduce any user-facing changes._
+
+## 0.13.0 — 2024-10-22
+
+### 🛠 Breaking changes
+
+- Bumped iOS deployment target to 15.1. ([#30840](https://github.com/expo/expo/pull/30840) by [@tsapeta](https://github.com/tsapeta))
+
+### 💡 Others
+
 - Export missing types. ([#29401](https://github.com/expo/expo/pull/29401) by [@Simek](https://github.com/Simek))
+- Deprecate `android.newArchEnabled` and `ios.newArchEnabled` in favor of app config `newArchEnabled`. ([#31963](https://github.com/expo/expo/pull/31963) by [@gabrieldonadel](https://github.com/gabrieldonadel))
 
 ## 0.12.5 - 2024-08-07
 

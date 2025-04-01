@@ -2,18 +2,18 @@ package expo.modules.updates
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.platform.app.InstrumentationRegistry
-import expo.modules.kotlin.events.EventEmitter
 import expo.modules.updates.events.IUpdatesEventManager
+import expo.modules.updates.events.IUpdatesEventManagerObserver
 import expo.modules.updates.logging.UpdatesLogger
 import expo.modules.updates.statemachine.UpdatesStateContext
 import expo.modules.updates.statemachine.UpdatesStateEvent
-import expo.modules.updates.statemachine.UpdatesStateEventType
 import expo.modules.updates.statemachine.UpdatesStateMachine
 import expo.modules.updates.statemachine.UpdatesStateValue
 import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.lang.ref.WeakReference
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -32,6 +32,17 @@ class UpdatesStateMachineInstrumentationTest {
     }
   }
 
+  private fun UpdatesStateMachine.resetAndIncrementRestartCountTest() {
+    val method: Method = UpdatesStateMachine::class.java.getDeclaredMethod("resetAndIncrementRestartCount")
+    method.isAccessible = true
+
+    try {
+      method.invoke(this)
+    } catch (e: InvocationTargetException) {
+      throw e.targetException
+    }
+  }
+
   private fun UpdatesStateMachine.getState(): UpdatesStateValue {
     val field: Field = UpdatesStateMachine::class.java.getDeclaredField("state")
     field.isAccessible = true
@@ -39,20 +50,14 @@ class UpdatesStateMachineInstrumentationTest {
   }
 
   private val androidContext = InstrumentationRegistry.getInstrumentation().context
-  private val logger = UpdatesLogger(androidContext)
+  private val logger = UpdatesLogger(androidContext.filesDir)
 
   // Test classes
   class TestStateChangeEventManager : IUpdatesEventManager {
-    var lastEventType: UpdatesStateEventType? = null
-
-    override var eventEmitter: EventEmitter? = null
-    override var shouldEmitJsEvents: Boolean = false
-
-    override fun sendStateChangeEvent(
-      eventType: UpdatesStateEventType,
-      context: UpdatesStateContext
-    ) {
-      lastEventType = eventType
+    var lastContext: UpdatesStateContext? = null
+    override var observer: WeakReference<IUpdatesEventManagerObserver>? = null
+    override fun sendStateMachineContextEvent(context: UpdatesStateContext) {
+      lastContext = context
     }
   }
 
@@ -64,6 +69,55 @@ class UpdatesStateMachineInstrumentationTest {
   }
 
   @Test
+  fun test_sequenceNumbers() {
+    val testStateChangeEventManager = TestStateChangeEventManager()
+    val machine = UpdatesStateMachine(logger, testStateChangeEventManager, UpdatesStateValue.values().toSet())
+    Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+
+    Assert.assertEquals(0, machine.context.sequenceNumber)
+
+    machine.processEventTest(UpdatesStateEvent.StartStartup())
+    machine.processEventTest(UpdatesStateEvent.Check())
+    machine.processEventTest(UpdatesStateEvent.CheckCompleteUnavailable())
+    machine.processEventTest(UpdatesStateEvent.EndStartup())
+
+    Assert.assertEquals(4, machine.context.sequenceNumber)
+  }
+
+  @Test
+  fun test_restart() {
+    val testStateChangeEventManager = TestStateChangeEventManager()
+    val machine = UpdatesStateMachine(logger, testStateChangeEventManager, UpdatesStateValue.values().toSet())
+    Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+
+    Assert.assertEquals(false, machine.context.isRestarting)
+    machine.processEventTest(UpdatesStateEvent.Restart())
+    Assert.assertEquals(true, machine.context.isRestarting)
+    Assert.assertEquals(1, machine.context.sequenceNumber)
+
+    machine.resetAndIncrementRestartCountTest()
+    Assert.assertEquals(1, machine.context.restartCount)
+    Assert.assertEquals(false, machine.context.isRestarting)
+    Assert.assertEquals(2, machine.context.sequenceNumber)
+  }
+
+  @Test
+  fun test_handleStartStartupAndEndStartup() {
+    val testStateChangeEventManager = TestStateChangeEventManager()
+    val machine = UpdatesStateMachine(logger, testStateChangeEventManager, UpdatesStateValue.values().toSet())
+
+    machine.processEventTest(UpdatesStateEvent.StartStartup())
+
+    Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isStartupProcedureRunning)
+
+    machine.processEventTest(UpdatesStateEvent.EndStartup())
+
+    Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isStartupProcedureRunning)
+  }
+
+  @Test
   fun test_handleCheckAndCheckCompleteAvailable() {
     val testStateChangeEventManager = TestStateChangeEventManager()
     val machine = UpdatesStateMachine(logger, testStateChangeEventManager, UpdatesStateValue.values().toSet())
@@ -71,7 +125,7 @@ class UpdatesStateMachineInstrumentationTest {
     machine.processEventTest(UpdatesStateEvent.Check())
 
     Assert.assertEquals(UpdatesStateValue.Checking, machine.getState())
-    Assert.assertEquals(UpdatesStateEventType.Check, testStateChangeEventManager.lastEventType)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isChecking)
 
     machine.processEventTest(
       UpdatesStateEvent.CheckCompleteWithUpdate(
@@ -83,7 +137,9 @@ class UpdatesStateMachineInstrumentationTest {
     Assert.assertTrue(machine.context.isUpdateAvailable)
     Assert.assertFalse(machine.context.isUpdatePending)
     Assert.assertEquals("0000-xxxx", machine.context.latestManifest?.get("updateId"))
-    Assert.assertEquals(UpdatesStateEventType.CheckCompleteAvailable, testStateChangeEventManager.lastEventType)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isChecking)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isUpdateAvailable)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isUpdatePending)
   }
 
   @Test
@@ -94,7 +150,7 @@ class UpdatesStateMachineInstrumentationTest {
     machine.processEventTest(UpdatesStateEvent.Check())
 
     Assert.assertEquals(UpdatesStateValue.Checking, machine.getState())
-    Assert.assertEquals(UpdatesStateEventType.Check, testStateChangeEventManager.lastEventType)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isChecking)
 
     machine.processEventTest(UpdatesStateEvent.CheckCompleteUnavailable())
 
@@ -103,7 +159,11 @@ class UpdatesStateMachineInstrumentationTest {
     Assert.assertFalse(machine.context.isUpdateAvailable)
     Assert.assertFalse(machine.context.isUpdatePending)
     Assert.assertNull(machine.context.latestManifest)
-    Assert.assertEquals(UpdatesStateEventType.CheckCompleteUnavailable, testStateChangeEventManager.lastEventType)
+
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isChecking)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isUpdateAvailable)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isUpdatePending)
+    Assert.assertNull(testStateChangeEventManager.lastContext!!.latestManifest)
   }
 
   @Test
@@ -114,7 +174,7 @@ class UpdatesStateMachineInstrumentationTest {
     machine.processEventTest(UpdatesStateEvent.Download())
 
     Assert.assertEquals(UpdatesStateValue.Downloading, machine.getState())
-    Assert.assertEquals(UpdatesStateEventType.Download, testStateChangeEventManager.lastEventType)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isDownloading)
 
     machine.processEventTest(
       UpdatesStateEvent.DownloadCompleteWithUpdate(
@@ -122,13 +182,20 @@ class UpdatesStateMachineInstrumentationTest {
       )
     )
     Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+
     Assert.assertFalse(machine.context.isDownloading)
     Assert.assertNull(machine.context.downloadError)
     Assert.assertEquals("0000-xxxx", machine.context.latestManifest?.get("updateId"))
     Assert.assertEquals("0000-xxxx", machine.context.downloadedManifest?.get("updateId"))
     Assert.assertTrue(machine.context.isUpdateAvailable)
     Assert.assertTrue(machine.context.isUpdatePending)
-    Assert.assertEquals(UpdatesStateEventType.DownloadComplete, testStateChangeEventManager.lastEventType)
+
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isDownloading)
+    Assert.assertNull(testStateChangeEventManager.lastContext!!.downloadError)
+    Assert.assertEquals("0000-xxxx", testStateChangeEventManager.lastContext!!.latestManifest?.get("updateId"))
+    Assert.assertEquals("0000-xxxx", testStateChangeEventManager.lastContext!!.downloadedManifest?.get("updateId"))
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isUpdateAvailable)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isUpdatePending)
   }
 
   @Test
@@ -139,15 +206,22 @@ class UpdatesStateMachineInstrumentationTest {
     machine.processEventTest(UpdatesStateEvent.Check())
 
     Assert.assertEquals(UpdatesStateValue.Checking, machine.getState())
-    Assert.assertEquals(UpdatesStateEventType.Check, testStateChangeEventManager.lastEventType)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isChecking)
 
     machine.processEventTest(UpdatesStateEvent.CheckCompleteWithRollback(commitTime))
     Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+
     Assert.assertFalse(machine.context.isChecking)
     Assert.assertNull(machine.context.checkError)
     Assert.assertTrue(machine.context.isUpdateAvailable)
     Assert.assertFalse(machine.context.isUpdatePending)
     Assert.assertEquals(commitTime, machine.context.rollback?.commitTime)
+
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isChecking)
+    Assert.assertNull(testStateChangeEventManager.lastContext!!.checkError)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isUpdateAvailable)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isUpdatePending)
+    Assert.assertEquals(commitTime, testStateChangeEventManager.lastContext!!.rollback?.commitTime)
   }
 
   @Test
@@ -158,17 +232,24 @@ class UpdatesStateMachineInstrumentationTest {
     machine.processEventTest(UpdatesStateEvent.Check())
 
     Assert.assertEquals(UpdatesStateValue.Checking, machine.getState())
-    Assert.assertEquals(UpdatesStateEventType.Check, testStateChangeEventManager.lastEventType)
+    Assert.assertTrue(testStateChangeEventManager.lastContext!!.isChecking)
 
     machine.processEventTest(
       UpdatesStateEvent.CheckError("A serious error has occurred")
     )
     Assert.assertEquals(UpdatesStateValue.Idle, machine.getState())
+
     Assert.assertFalse(machine.context.isChecking)
     Assert.assertNotNull(machine.context.checkError)
     Assert.assertFalse(machine.context.isUpdateAvailable)
     Assert.assertFalse(machine.context.isUpdatePending)
     Assert.assertNull(machine.context.rollback)
+
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isChecking)
+    Assert.assertNotNull(testStateChangeEventManager.lastContext!!.checkError)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isUpdateAvailable)
+    Assert.assertFalse(testStateChangeEventManager.lastContext!!.isUpdatePending)
+    Assert.assertNull(testStateChangeEventManager.lastContext!!.rollback)
   }
 
   @Test

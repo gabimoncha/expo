@@ -123,6 +123,9 @@ public class LocalizationModule: Module {
       return "roc"
     case .iso8601:
       return "iso8601"
+    @unknown default:
+      log.error("Unhandled `Calendar.Identifier` value: \(calendar.identifier), returning `iso8601` as fallback. Add the missing case as soon as possible.")
+      return "iso8601"
     }
   }
 
@@ -149,26 +152,34 @@ public class LocalizationModule: Module {
           return [
             "languageTag": languageTag,
             "languageCode": languageLocale.language.languageCode?.identifier,
-            "regionCode": languageLocale.region?.identifier,
+            "languageScriptCode": languageLocale.language.script?.identifier,
+            "languageRegionCode": languageLocale.region?.identifier,
+            "regionCode": userSettingsLocale.region?.identifier,
             "textDirection": languageLocale.language.characterDirection == .rightToLeft ? "rtl" : "ltr",
             "decimalSeparator": userSettingsLocale.decimalSeparator,
             "digitGroupingSeparator": userSettingsLocale.groupingSeparator,
             "measurementSystem": getMeasurementSystemForLocale(userSettingsLocale),
-            "currencyCode": languageLocale.currencyCode,
-            "currencySymbol": languageLocale.currencySymbol,
+            "currencyCode": userSettingsLocale.currencyCode,
+            "currencySymbol": userSettingsLocale.currencySymbol,
+            "languageCurrencyCode": languageLocale.currencyCode,
+            "languageCurrencySymbol": languageLocale.currencySymbol,
             "temperatureUnit": getTemperatureUnit()
           ]
         }
         return [
           "languageTag": languageTag,
           "languageCode": languageLocale.languageCode,
-          "regionCode": languageLocale.regionCode,
+          "languageScriptCode": languageLocale.scriptCode,
+          "languageRegionCode": languageLocale.regionCode,
+          "regionCode": userSettingsLocale.regionCode,
           "textDirection": Locale.characterDirection(forLanguage: languageTag) == .rightToLeft ? "rtl" : "ltr",
           "decimalSeparator": userSettingsLocale.decimalSeparator,
           "digitGroupingSeparator": userSettingsLocale.groupingSeparator,
           "measurementSystem": getMeasurementSystemForLocale(userSettingsLocale),
-          "currencyCode": languageLocale.currencyCode,
-          "currencySymbol": languageLocale.currencySymbol,
+          "currencyCode": userSettingsLocale.currencyCode,
+          "currencySymbol": userSettingsLocale.currencySymbol,
+          "languageCurrencyCode": languageLocale.currencyCode,
+          "languageCurrencySymbol": languageLocale.currencySymbol,
           "temperatureUnit": getTemperatureUnit()
         ]
       }

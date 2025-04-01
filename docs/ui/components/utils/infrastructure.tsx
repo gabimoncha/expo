@@ -9,7 +9,12 @@ const AndroidResourceClassToSpec: Record<(typeof ResourceClasses.android)[number
       <markdownComponents.a href="https://cloud.google.com/compute/docs/general-purpose-machines#n2_machine_types">
         n2-standard-4
       </markdownComponents.a>{' '}
-      Google Cloud machine type)
+      or{' '}
+      <markdownComponents.a href="https://cloud.google.com/compute/docs/general-purpose-machines#c3d_machine_types">
+        c3d-standard-4
+      </markdownComponents.a>{' '}
+      (default) Google Cloud machine type, depending on the "New Android Builds Infrastructure"
+      setting in project settings)
     </>
   ),
   large: (
@@ -18,23 +23,19 @@ const AndroidResourceClassToSpec: Record<(typeof ResourceClasses.android)[number
       <markdownComponents.a href="https://cloud.google.com/compute/docs/general-purpose-machines#n2_machine_types">
         n2-standard-8
       </markdownComponents.a>{' '}
-      Google Cloud machine type)
+      or{' '}
+      <markdownComponents.a href="https://cloud.google.com/compute/docs/general-purpose-machines#c3d_machine_types">
+        c3d-standard-8
+      </markdownComponents.a>{' '}
+      (default) Google Cloud machine type, depending on the "New Android Builds Infrastructure"
+      setting in project settings)
     </>
   ),
 };
 
 const IosResourceClassToSpec: Record<(typeof ResourceClasses.ios)[number], JSX.Element> = {
-  medium: <>3 vCPUs, 8 GB RAM</>,
-  large: (
-    <>
-      <markdownComponents.ul>
-        <markdownComponents.li>6 vCPUs, 22 GB RAM if running on an M2 Mac</markdownComponents.li>
-        <markdownComponents.li>
-          5 vCPUs, 12 GB RAM if running on an M2 Pro Mac
-        </markdownComponents.li>
-      </markdownComponents.ul>
-    </>
-  ),
+  medium: <>5 performance cores, 20 GiB RAM, 110 GB SSD</>,
+  large: <>10 performance cores, 40 GiB RAM, 110 GB SSD</>,
 };
 
 function ResourceClassSpecLink({

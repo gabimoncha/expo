@@ -1,20 +1,23 @@
 import React, { Text } from 'react-native';
 
-import { Slot, router, useGlobalSearchParams } from '../exports';
+import { Slot, router, useGlobalSearchParams, usePathname } from '../exports';
 import { Drawer } from '../layouts/Drawer';
 import { Stack } from '../layouts/Stack';
 import { Tabs } from '../layouts/Tabs';
 import { Redirect } from '../link/Link';
 import { act, renderRouter, screen } from '../testing-library';
 
-it('404', async () => {
-  const Index = jest.fn(() => <Redirect href="/404" />);
+it('404', () => {
+  renderRouter(
+    {
+      index: () => null,
+    },
+    {
+      initialUrl: '/404',
+    }
+  );
 
-  renderRouter({
-    index: Index,
-  });
-
-  expect(await screen.findByText('Unmatched Route')).toBeOnTheScreen();
+  expect(screen.getByText('Unmatched Route')).toBeOnTheScreen();
   expect(screen).toHavePathname('/404');
   expect(screen).toHaveSegments(['+not-found']);
   expect(screen).toHaveSearchParams({ 'not-found': ['404'] });
@@ -162,7 +165,7 @@ it('layouts', async () => {
   });
 
   expect(await screen.findByText('Other')).toBeOnTheScreen();
-  expect(Layout).toHaveBeenCalledTimes(2);
+  expect(Layout).toHaveBeenCalledTimes(1);
   expect(Index).toHaveBeenCalledTimes(1);
   expect(Other).toHaveBeenCalledTimes(1);
 });
@@ -189,7 +192,7 @@ it('nested layouts', async () => {
 
   expect(await screen.findByText('HomeNested')).toBeOnTheScreen();
 
-  expect(AppLayout).toHaveBeenCalledTimes(3);
+  expect(AppLayout).toHaveBeenCalledTimes(1);
   expect(TabsLayout).toHaveBeenCalledTimes(2);
   expect(StackLayout).toHaveBeenCalledTimes(2);
   expect(Index).toHaveBeenCalledTimes(1);
@@ -233,7 +236,7 @@ it('deep linking nested groups', async () => {
   expect(screen.getByTestId('Home')).toBeOnTheScreen();
 
   expect(RootLayout).toHaveBeenCalledTimes(1);
-  expect(AppLayout).toHaveBeenCalledTimes(3);
+  expect(AppLayout).toHaveBeenCalledTimes(1);
   expect(TabsLayout).toHaveBeenCalledTimes(1);
   expect(HomeLayout).toHaveBeenCalledTimes(1);
   expect(OtherTabsLayout).toHaveBeenCalledTimes(1);
@@ -285,4 +288,25 @@ it.skip('can navigate across the drawer navigator', () => {
   act(() => router.push('/one'));
   expect(screen).toHavePathname('/one');
   expect(screen.getByTestId('one')).toBeOnTheScreen();
+});
+
+it('can redirect during the initial render', () => {
+  renderRouter({
+    _layout: function Layout() {
+      const pathName = usePathname();
+
+      if (pathName === '/') {
+        return <Redirect href="/test" />;
+      }
+
+      return <Stack />;
+    },
+    '/test/_layout': function TestLayout() {
+      return <Stack />;
+    },
+    '/test/index': () => <Text testID="test">test</Text>,
+  });
+
+  expect(screen).toHavePathname('/test');
+  expect(screen.getByTestId('test')).toBeOnTheScreen();
 });

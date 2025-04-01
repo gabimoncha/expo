@@ -1,6 +1,4 @@
-import { css } from '@emotion/react';
-import { mergeClasses, theme, Themes, typography } from '@expo/styleguide';
-import { borderRadius, spacing } from '@expo/styleguide-base';
+import { mergeClasses, Themes } from '@expo/styleguide';
 import { FileCode01Icon } from '@expo/styleguide-icons/outline/FileCode01Icon';
 import { LayoutAlt01Icon } from '@expo/styleguide-icons/outline/LayoutAlt01Icon';
 import { Server03Icon } from '@expo/styleguide-icons/outline/Server03Icon';
@@ -9,10 +7,9 @@ import tippy, { roundArrow } from 'tippy.js';
 
 import {
   cleanCopyValue,
-  getRootCodeBlockProps,
   getCodeData,
-  parseValue,
   getCollapseHeight,
+  getCodeBlockDataFromChildren,
 } from '~/common/code-utilities';
 import { useCodeBlockSettingsContext } from '~/providers/CodeBlockSettingsProvider';
 import { Snippet } from '~/ui/components/Snippet/Snippet';
@@ -24,7 +21,7 @@ import { SettingsAction } from '~/ui/components/Snippet/actions/SettingsAction';
 import { CODE } from '~/ui/components/Text';
 import { TextTheme } from '~/ui/components/Text/types';
 
-// @ts-ignore Jest ESM issue https://github.com/facebook/jest/issues/9430
+// @ts-expect-error Jest ESM issue https://github.com/facebook/jest/issues/9430
 const { default: testTippy } = tippy;
 
 const attributes = {
@@ -40,17 +37,21 @@ export function Code({ className, children, title }: CodeProps) {
   const contentRef = useRef<HTMLPreElement>(null);
   const { preferredTheme, wordWrap } = useCodeBlockSettingsContext();
 
-  const rootProps = getRootCodeBlockProps(children, className);
-  const codeBlockData = parseValue(rootProps?.children?.toString() ?? '');
-  const codeBlockTitle = codeBlockData?.title ?? title;
+  const {
+    language,
+    value,
+    params,
+    title: blockTitle,
+  } = getCodeBlockDataFromChildren(children, className);
+  const codeBlockTitle = blockTitle ?? title;
 
   const [isExpanded, setExpanded] = useState(false);
   const [collapseBound, setCollapseBound] = useState<number | undefined>(undefined);
   const [blockHeight, setBlockHeight] = useState<number | undefined>(undefined);
 
-  const collapseHeight = getCollapseHeight(codeBlockData.params);
+  const collapseHeight = getCollapseHeight(params);
   const showExpand = !isExpanded && blockHeight && collapseBound && blockHeight > collapseBound;
-  const highlightedHtml = getCodeData(codeBlockData.value, rootProps.className);
+  const highlightedHtml = getCodeData(value, language);
 
   useEffect(() => {
     const tippyFunc = testTippy || tippy;
@@ -87,28 +88,27 @@ export function Code({ className, children, title }: CodeProps) {
     setCollapseBound(undefined);
   }
 
-  const commonClasses = [
-    wordWrap && '!whitespace-pre-wrap !break-words',
-    showExpand && !isExpanded && `!overflow-hidden`,
-  ];
+  const commonClasses = mergeClasses(
+    wordWrap && '!break-words !whitespace-pre-wrap',
+    showExpand && !isExpanded && `!overflow-hidden`
+  );
 
   return codeBlockTitle ? (
     <Snippet>
       <SnippetHeader title={codeBlockTitle} Icon={getIconForFile(codeBlockTitle)}>
-        <CopyAction text={cleanCopyValue(codeBlockData.value)} />
+        <CopyAction text={cleanCopyValue(value)} />
         <SettingsAction />
       </SnippetHeader>
       <SnippetContent className="p-0">
         <pre
           ref={contentRef}
-          css={STYLES_CODE_CONTAINER}
           style={{
             maxHeight: collapseBound,
           }}
-          className={mergeClasses('relative', ...commonClasses)}
+          className={mergeClasses('relative whitespace-pre p-4', commonClasses)}
           {...attributes}>
           <code
-            css={STYLES_CODE_BLOCK}
+            className="text-2xs text-default"
             dangerouslySetInnerHTML={{ __html: highlightedHtml.replace(/^@@@.+@@@/g, '') }}
           />
           {showExpand && <SnippetExpandOverlay onClick={expandCodeBlock} />}
@@ -118,43 +118,24 @@ export function Code({ className, children, title }: CodeProps) {
   ) : (
     <pre
       ref={contentRef}
-      css={STYLES_CODE_CONTAINER}
       style={{
         maxHeight: collapseBound,
       }}
       className={mergeClasses(
-        'relative border border-secondary p-4 my-4 bg-subtle',
+        'relative my-4 overflow-x-auto whitespace-pre rounded-md border border-secondary bg-subtle p-4',
         preferredTheme === Themes.DARK && 'dark-theme',
-        ...commonClasses,
-        'last:mb-0'
+        commonClasses,
+        '[p+&]:mt-0'
       )}
       {...attributes}>
-      <code css={STYLES_CODE_BLOCK} dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
+      <code
+        className="text-2xs text-default"
+        dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+      />
       {showExpand && <SnippetExpandOverlay onClick={expandCodeBlock} />}
     </pre>
   );
 }
-
-const STYLES_CODE_BLOCK = css`
-  ${typography.body.code};
-  color: ${theme.text.default};
-  white-space: inherit;
-  padding: 0;
-  margin: 0;
-`;
-
-const STYLES_CODE_CONTAINER = css`
-  white-space: pre;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  line-height: 120%;
-  border-radius: ${borderRadius.sm}px;
-  padding: ${spacing[4]}px;
-
-  table &:last-child {
-    margin-bottom: 0;
-  }
-`;
 
 type CodeBlockProps = PropsWithChildren<{
   inline?: boolean;
@@ -166,13 +147,15 @@ export const CodeBlock = ({ children, theme, className, inline = false }: CodeBl
   const Element = inline ? 'span' : 'pre';
   return (
     <Element
-      className={mergeClasses('m-0 px-1 py-1.5', inline && 'inline-flex !p-0')}
-      css={STYLES_CODE_CONTAINER}
+      className={mergeClasses('m-0 whitespace-pre px-1 py-1.5', inline && 'inline-flex !p-0')}
       {...attributes}>
       <CODE
-        className={mergeClasses('!text-[85%]', inline && 'inline-flex w-full !p-1.5', className)}
-        theme={theme}
-        css={STYLES_CODE_BLOCK}>
+        className={mergeClasses(
+          '!text-3xs text-default',
+          inline && 'block w-full !p-1.5',
+          className
+        )}
+        theme={theme}>
         {children}
       </CODE>
     </Element>

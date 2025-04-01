@@ -6,7 +6,12 @@ import { createFingerprintFromSourcesAsync } from './hash/Hash';
 import { getHashSourcesAsync } from './sourcer/Sourcer';
 
 /**
- * Create a fingerprint from project
+ * Create a fingerprint for a project.
+ * @example
+ * ```js
+ * const fingerprint = await createFingerprintAsync('/app');
+ * console.log(fingerprint);
+ * ```
  */
 export async function createFingerprintAsync(
   projectRoot: string,
@@ -20,7 +25,13 @@ export async function createFingerprintAsync(
 }
 
 /**
- * Create a native hash value from project
+ * Create a native hash value for a project.
+ *
+ * @example
+ * ```ts
+ * const hash = await createProjectHashAsync('/app');
+ * console.log(hash);
+ * ```
  */
 export async function createProjectHashAsync(
   projectRoot: string,
@@ -31,7 +42,19 @@ export async function createProjectHashAsync(
 }
 
 /**
- * Differentiate given `fingerprint` with the current project fingerprint state
+ * Diff the fingerprint with the fingerprint of the provided project.
+ *
+ * @example
+ * ```ts
+ * // Create a fingerprint for the project
+ * const fingerprint = await createFingerprintAsync('/app');
+ *
+ * // Make some changes to the project
+ *
+ * // Calculate the diff
+ * const diff = await diffFingerprintChangesAsync(fingerprint, '/app');
+ * console.log(diff);
+ * ```
  */
 export async function diffFingerprintChangesAsync(
   fingerprint: Fingerprint,
@@ -46,8 +69,20 @@ export async function diffFingerprintChangesAsync(
 }
 
 /**
- * Differentiate two fingerprints with operation type.
- * The implementation is assumed that the sources are sorted.
+ * Diff two fingerprints. The implementation assumes that the sources are sorted.
+ *
+ * @example
+ * ```ts
+ * // Create a fingerprint for the project
+ * const fingerprint = await createFingerprintAsync('/app');
+ *
+ * // Make some changes to the project
+ *
+ * // Create a fingerprint again
+ * const fingerprint2 = await createFingerprintAsync('/app');
+ * const diff = await diffFingerprints(fingerprint, fingerprint2);
+ * console.log(diff);
+ * ```
  */
 export function diffFingerprints(
   fingerprint1: Fingerprint,
@@ -64,25 +99,25 @@ export function diffFingerprints(
     const compareResult = compareSource(source1, source2);
     if (compareResult === 0) {
       if (source1.hash !== source2.hash) {
-        diff.push({ op: 'changed', source: source2 });
+        diff.push({ op: 'changed', beforeSource: source1, afterSource: source2 });
       }
       ++index1;
       ++index2;
     } else if (compareResult < 0) {
-      diff.push({ op: 'removed', source: source1 });
+      diff.push({ op: 'removed', removedSource: source1 });
       ++index1;
     } else {
-      diff.push({ op: 'added', source: source2 });
+      diff.push({ op: 'added', addedSource: source2 });
       ++index2;
     }
   }
 
   while (index1 < fingerprint1.sources.length) {
-    diff.push({ op: 'removed', source: fingerprint1.sources[index1] });
+    diff.push({ op: 'removed', removedSource: fingerprint1.sources[index1] });
     ++index1;
   }
   while (index2 < fingerprint2.sources.length) {
-    diff.push({ op: 'added', source: fingerprint2.sources[index2] });
+    diff.push({ op: 'added', addedSource: fingerprint2.sources[index2] });
     ++index2;
   }
 

@@ -5,6 +5,7 @@ import NativeVideoModule from './NativeVideoModule';
 /**
  * Represents a video thumbnail that references a native image.
  * Instances of this class can be passed as a source to the `Image` component from `expo-image`.
+ * @platform android
  * @platform ios
  */
 export declare class VideoThumbnail extends SharedRef<'image'> {
@@ -18,7 +19,6 @@ export declare class VideoThumbnail extends SharedRef<'image'> {
   height: number;
   /**
    * The time in seconds at which the thumbnail was to be created.
-   * @platform ios
    */
   requestedTime: number;
   /**

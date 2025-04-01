@@ -27,8 +27,8 @@ class UpdatesStateMachine(
         return state
       }
 
-      override fun resetState() {
-        reset()
+      override fun resetStateAfterRestart() {
+        resetAndIncrementRestartCount()
       }
     }
   )
@@ -54,11 +54,11 @@ class UpdatesStateMachine(
   /**
    * Reset the machine to its starting state. Should only be called after the app restarts (reloadAsync()).
    */
-  private fun reset() {
+  private fun resetAndIncrementRestartCount() {
     state = UpdatesStateValue.Idle
-    context = context.resetCopyWithIncrementedSequenceNumber()
+    context = context.resetCopyWithIncrementedRestartCountAndSequenceNumber()
     logger.info("Updates state change: reset, context = ${context.json}")
-    sendChangeEventToJS(UpdatesStateEvent.Restart())
+    sendContextToJS()
   }
 
   /**
@@ -68,8 +68,7 @@ class UpdatesStateMachine(
     if (transition(event)) {
       context = reduceContext(context, event)
       logger.info("Updates state change: ${event.type}, context = ${context.json}")
-      // Send change event
-      sendChangeEventToJS(event)
+      sendContextToJS()
     }
   }
 
@@ -91,8 +90,8 @@ class UpdatesStateMachine(
     return true
   }
 
-  private fun sendChangeEventToJS(event: UpdatesStateEvent) {
-    eventManager.sendStateChangeEvent(event.type, context)
+  fun sendContextToJS() {
+    eventManager.sendStateMachineContextEvent(context)
   }
 
   companion object {
@@ -100,7 +99,7 @@ class UpdatesStateMachine(
      For a particular machine state, only certain events may be processed.
      */
     val updatesStateAllowedEvents: Map<UpdatesStateValue, Set<UpdatesStateEventType>> = mapOf(
-      UpdatesStateValue.Idle to setOf(UpdatesStateEventType.Check, UpdatesStateEventType.Download, UpdatesStateEventType.Restart),
+      UpdatesStateValue.Idle to setOf(UpdatesStateEventType.StartStartup, UpdatesStateEventType.EndStartup, UpdatesStateEventType.Check, UpdatesStateEventType.Download, UpdatesStateEventType.Restart),
       UpdatesStateValue.Checking to setOf(UpdatesStateEventType.CheckCompleteAvailable, UpdatesStateEventType.CheckCompleteUnavailable, UpdatesStateEventType.CheckError),
       UpdatesStateValue.Downloading to setOf(UpdatesStateEventType.DownloadComplete, UpdatesStateEventType.DownloadError),
       UpdatesStateValue.Restarting to setOf()
@@ -111,6 +110,8 @@ class UpdatesStateMachine(
      machine will transition to.
      */
     val updatesStateTransitions: Map<UpdatesStateEventType, UpdatesStateValue> = mapOf(
+      UpdatesStateEventType.StartStartup to UpdatesStateValue.Idle,
+      UpdatesStateEventType.EndStartup to UpdatesStateValue.Idle,
       UpdatesStateEventType.Check to UpdatesStateValue.Checking,
       UpdatesStateEventType.CheckCompleteAvailable to UpdatesStateValue.Idle,
       UpdatesStateEventType.CheckCompleteUnavailable to UpdatesStateValue.Idle,
@@ -127,6 +128,12 @@ class UpdatesStateMachine(
      */
     private fun reduceContext(context: UpdatesStateContext, event: UpdatesStateEvent): UpdatesStateContext {
       return when (event) {
+        is UpdatesStateEvent.StartStartup -> context.copyAndIncrementSequenceNumber(
+          isStartupProcedureRunning = true
+        )
+        is UpdatesStateEvent.EndStartup -> context.copyAndIncrementSequenceNumber(
+          isStartupProcedureRunning = false
+        )
         is UpdatesStateEvent.Check -> context.copyAndIncrementSequenceNumber(
           isChecking = true
         )

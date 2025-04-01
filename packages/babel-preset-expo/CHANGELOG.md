@@ -4,6 +4,103 @@
 
 ### 🛠 Breaking changes
 
+- upgrade RN to 0.78 ([#35050](https://github.com/expo/expo/pull/35050) by [@vonovak](https://github.com/vonovak))
+
+### 🎉 New features
+
+- Add `decorators` option to configure the `@babel/plugin-proposal-decorators` plugin. ([#34647](https://github.com/expo/expo/pull/34647) by [@EvanBacon](https://github.com/EvanBacon))
+- Add `babel-plugin-syntax-hermes-parser` to the server preset for native RSC. ([#34213](https://github.com/expo/expo/pull/34213) by [@EvanBacon](https://github.com/EvanBacon))
+- Add `displayName` to DOM components for better debugging. ([#33369](https://github.com/expo/expo/pull/33369) by [@EvanBacon](https://github.com/EvanBacon))
+
+### 🐛 Bug fixes
+
+- Add all missing dependencies for package resolution with NPM. ([#34628](https://github.com/expo/expo/pull/34628) by [@EvanBacon](https://github.com/EvanBacon))
+
+### 💡 Others
+
+## 12.0.10 - 2025-03-31
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.9 - 2025-02-20
+
+### 🐛 Bug fixes
+
+- Fixed EAS Update support for DOM Components. ([#35042](https://github.com/expo/expo/pull/35042) by [@kudo](https://github.com/kudo))
+
+## 12.0.8 - 2025-02-14
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.7 - 2025-02-06
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.5 - 2025-01-08
+
+### 🐛 Bug fixes
+
+- Fix server action scope position during extraction. ([#33933](https://github.com/expo/expo/pull/33933) by [@EvanBacon](https://github.com/EvanBacon))
+
+## 12.0.4 - 2024-12-10
+
+### 🐛 Bug fixes
+
+- Test for UNIX paths when removing console polyfill from RSC client output. ([#33397](https://github.com/expo/expo/pull/33397) by [@byCedric](https://github.com/byCedric))
+- Add support for `TSInterfaceDeclaration` in server component plugin. ([#33121](https://github.com/expo/expo/pull/33121) by [@EvanBacon](https://github.com/EvanBacon))
+
+## 12.0.3 - 2024-11-29
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.2 — 2024-11-22
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.1 — 2024-11-14
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.0 — 2024-11-11
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.0-preview.6 — 2024-11-07
+
+### 🎉 New features
+
+- Support hoisting for inlined server actions. ([#32633](https://github.com/expo/expo/pull/32633) by [@EvanBacon](https://github.com/EvanBacon))
+
+## 12.0.0-preview.5 — 2024-11-04
+
+### 💡 Others
+
+- Added EAS Updates support for DOM Components. ([#32502](https://github.com/expo/expo/pull/32502) by [@kudo](https://github.com/kudo))
+
+## 12.0.0-preview.4 — 2024-10-31
+
+### 🐛 Bug fixes
+
+- Don't assert `client-only` in SSR bundles. ([#32479](https://github.com/expo/expo/pull/32479) by [@EvanBacon](https://github.com/EvanBacon))
+
+## 12.0.0-preview.3 — 2024-10-30
+
+### 🎉 New features
+
+- Add support for server actions that use `export default`. ([#32458](https://github.com/expo/expo/pull/32458) by [@EvanBacon](https://github.com/EvanBacon))
+
+## 12.0.0-preview.2 — 2024-10-29
+
+### 🎉 New features
+
+- Assert that layout routes and API routes cannot be DOM components. ([#32422](https://github.com/expo/expo/pull/32422) by [@EvanBacon](https://github.com/EvanBacon))
+
+## 12.0.0-preview.1 — 2024-10-24
+
+_This version does not introduce any user-facing changes._
+
+## 12.0.0-preview.0 — 2024-10-22
+
 ### 🎉 New features
 
 - Add experimental support for React Server Actions in Expo Router. ([#31959](https://github.com/expo/expo/pull/31959) by [@EvanBacon](https://github.com/EvanBacon))
@@ -16,12 +113,14 @@
 
 ### 🐛 Bug fixes
 
+- Fix React compiler support. ([#32187](https://github.com/expo/expo/pull/32187) by [@EvanBacon](https://github.com/EvanBacon))
 - Mock out js console polyfill for server environments. ([#32028](https://github.com/expo/expo/pull/32028) by [@EvanBacon](https://github.com/EvanBacon))
 - Remove `@babel/plugin-transform-parameters` plugin when bundling for server environments that target native. ([#30147](https://github.com/expo/expo/pull/30147) by [@EvanBacon](https://github.com/EvanBacon))
 - Fixed `ReferenceError: Property 'React' doesn't exist.` crash when a DOM component includes `import React from 'react';`. ([#31469](https://github.com/expo/expo/pull/31469) by [@kudo](https://github.com/kudo))
 
 ### 💡 Others
 
+- Bump `react-native-web` patch ([#32105](https://github.com/expo/expo/pull/32105) by [@EvanBacon](https://github.com/EvanBacon))
 - Remove web hydration flag injection. ([#31267](https://github.com/expo/expo/pull/31267) by [@EvanBacon](https://github.com/EvanBacon))
 - Remove `"use dom"` injection on web. ([#31259](https://github.com/expo/expo/pull/31259) by [@EvanBacon](https://github.com/EvanBacon))
 - Inline the generated DOM component entry function for DOM bundles. ([#31182](https://github.com/expo/expo/pull/31182) by [@EvanBacon](https://github.com/EvanBacon))

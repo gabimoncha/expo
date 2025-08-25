@@ -41,7 +41,7 @@ function isCodeSigningConfigured(projectRoot: string): boolean {
   return false;
 }
 
-async function configureCodeSigningAsync(projectRoot: string) {
+export async function configureCodeSigningAsync(projectRoot: string) {
   const ids = await Security.findIdentitiesAsync();
 
   const id = await resolveCertificateSigningIdentityAsync(projectRoot, ids);

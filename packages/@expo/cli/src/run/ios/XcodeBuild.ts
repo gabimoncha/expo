@@ -1,14 +1,14 @@
 import { ExpoRunFormatter } from '@expo/xcpretty';
 import chalk from 'chalk';
-import { spawn, SpawnOptionsWithoutStdio } from 'child_process';
+import { type SpawnOptionsWithoutStdio, spawn } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
-import { BuildProps, ProjectInfo } from './XcodeBuild.types';
-import { ensureDeviceIsCodeSignedForDeploymentAsync } from './codeSigning/configureCodeSigning';
-import { simulatorBuildRequiresCodeSigning } from './codeSigning/simulatorCodeSigning';
+import type { BuildProps, ProjectInfo } from './XcodeBuild.types';
 import * as Log from '../../log';
+import { ensureDeviceIsCodeSignedForDeploymentAsync, configureCodeSigningAsync } from './codeSigning/configureCodeSigning';
+import { simulatorBuildRequiresCodeSigning } from './codeSigning/simulatorCodeSigning';
 import { ensureDirectory } from '../../utils/dir';
 import { env } from '../../utils/env';
 import { AbortCommandError, CommandError } from '../../utils/errors';
@@ -161,7 +161,8 @@ export async function getXcodeBuildArgsAsync(
     | 'scheme'
     | 'device'
     | 'isSimulator'
-  >
+  >,
+  archivePath?: string
 ): Promise<string[]> {
   const args = [
     props.xcodeProject.isWorkspace ? '-workspace' : '-project',
@@ -172,6 +173,7 @@ export async function getXcodeBuildArgsAsync(
     props.scheme,
     '-destination',
     `id=${props.device.udid}`,
+    ...(archivePath ? ['archive', '-archivePath', archivePath] : []),
   ];
 
   if (!props.isSimulator || simulatorBuildRequiresCodeSigning(props.projectRoot)) {
@@ -197,6 +199,46 @@ export async function getXcodeBuildArgsAsync(
   return args;
 }
 
+function createExportOptionsPlist(
+  teamId: string,
+  method: 'development' | 'app-store' = 'development'
+): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>${method}</string>
+	<key>teamID</key>
+	<string>${teamId}</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>stripSwiftSymbols</key>
+	<true/>
+	<key>uploadBitcode</key>
+	<false/>
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>`;
+}
+
+async function getXcodeExportArgsAsync(
+  archivePath: string,
+  exportPath: string,
+  exportOptionsPlistPath: string
+): Promise<string[]> {
+  return [
+    '-exportArchive',
+    '-archivePath',
+    archivePath,
+    '-exportPath',
+    exportPath,
+    '-exportOptionsPlist',
+    exportOptionsPlistPath,
+  ];
+}
+
 function spawnXcodeBuild(
   args: string[],
   options: SpawnOptionsWithoutStdio,
@@ -218,8 +260,36 @@ function spawnXcodeBuild(
     error += stringData;
   });
 
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve) => {
     buildProcess.on('close', (code: number) => {
+      resolve({ code, results, error });
+    });
+  });
+}
+
+function spawnXcodeExport(
+  args: string[],
+  options: SpawnOptionsWithoutStdio,
+  { onData }: { onData: (data: string) => void }
+): Promise<{ code: number | null; results: string; error: string }> {
+  const exportProcess = spawn('xcodebuild', args, options);
+
+  let results = '';
+  let error = '';
+
+  exportProcess.stdout.on('data', (data: Buffer) => {
+    const stringData = data.toString();
+    results += stringData;
+    onData(stringData);
+  });
+
+  exportProcess.stderr.on('data', (data: Buffer) => {
+    const stringData = data instanceof Buffer ? data.toString() : data;
+    error += stringData;
+  });
+
+  return new Promise((resolve) => {
+    exportProcess.on('close', (code: number) => {
       resolve({ code, results, error });
     });
   });
@@ -265,7 +335,12 @@ async function spawnXcodeBuildWithFormat(
   args: string[],
   options: SpawnOptionsWithoutStdio,
   { projectRoot, xcodeProject }: { projectRoot: string; xcodeProject: ProjectInfo }
-): Promise<{ code: number | null; results: string; error: string; formatter: ExpoRunFormatter }> {
+): Promise<{
+  code: number | null;
+  results: string;
+  error: string;
+  formatter: ExpoRunFormatter;
+}> {
   Log.debug(`  xcodebuild ${args.join(' ')}`);
 
   logPrettyItem(chalk.bold`Planning build`);
@@ -339,6 +414,223 @@ export async function buildAsync(props: BuildProps): Promise<string> {
     _assertXcodeBuildResults(code, results, error, xcodeProject, logFilePath);
   }
   return results;
+}
+
+export async function archiveAsync(props: BuildProps): Promise<string> {
+  // Generate archive path
+  const archivePath = path.join(
+    props.projectRoot,
+    '.expo',
+    'archives',
+    `${props.scheme}.xcarchive`
+  );
+
+  // Ensure archive directory exists
+  ensureDirectory(path.dirname(archivePath));
+
+  const args = await getXcodeBuildArgsAsync(props, archivePath);
+
+  const { projectRoot, xcodeProject, shouldSkipInitialBundling, port, eagerBundleOptions } = props;
+
+  logPrettyItem(chalk.bold`Creating archive`);
+
+  const { code, results, formatter, error } = await spawnXcodeBuildWithFormat(
+    args,
+    getProcessOptions({
+      packager: false,
+      terminal: getUserTerminal(),
+      shouldSkipInitialBundling,
+      port,
+      eagerBundleOptions,
+    }),
+    {
+      projectRoot,
+      xcodeProject,
+    }
+  );
+
+  const logFilePath = writeBuildLogs(projectRoot, results, error);
+
+  if (code !== 0) {
+    // Determine if the logger found any errors;
+    const wasErrorPresented = !!formatter.errors.length;
+
+    if (wasErrorPresented) {
+      throw new CommandError(
+        `Failed to archive iOS project. "xcodebuild" exited with error code ${code}.`
+      );
+    }
+
+    _assertXcodeBuildResults(code, results, error, xcodeProject, logFilePath);
+  }
+
+  // Verify the archive was created
+  if (!fs.existsSync(archivePath)) {
+    throw new CommandError(`Archive was not created at expected path: ${archivePath}`);
+  }
+
+  Log.log(`✅ Archive created at: ${archivePath}`);
+  return archivePath;
+}
+
+export async function exportArchiveAsync(
+  archivePath: string,
+  projectRoot: string
+): Promise<string> {
+
+  const teamId = await configureCodeSigningAsync(projectRoot);
+  
+  // Generate export directory
+  const exportDir = path.join(
+    projectRoot,
+    '.expo',
+    'exports',
+    `${path.basename(archivePath, '.xcarchive')}`
+  );
+
+  // Ensure export directory exists
+  ensureDirectory(exportDir);
+
+  // Create ExportOptions.plist
+  const exportOptionsPlistPath = path.join(exportDir, 'ExportOptions.plist');
+  const exportOptionsPlist = createExportOptionsPlist(teamId);
+  fs.writeFileSync(exportOptionsPlistPath, exportOptionsPlist);
+
+  const args = await getXcodeExportArgsAsync(archivePath, exportDir, exportOptionsPlistPath);
+
+  logPrettyItem(chalk.bold`Exporting signed IPA`);
+
+  const { code, results, error } = await spawnXcodeExport(
+    args,
+    getProcessOptions({
+      packager: false,
+      terminal: getUserTerminal(),
+      shouldSkipInitialBundling: false,
+      port: 8081,
+      eagerBundleOptions: undefined,
+    }),
+    {
+      onData: (data) => {
+        // Parse export output for progress
+        if (data.includes('Exported')) {
+          Log.log(data.trim());
+        }
+      },
+    }
+  );
+
+  if (code !== 0) {
+    throw new CommandError(
+      `Failed to export archive. "xcodebuild -exportArchive" exited with error code ${code}.\n\n${error}`
+    );
+  }
+
+  Log.debug('Export results:', results);
+
+  // Find the exported IPA
+  const ipaFiles = fs.readdirSync(exportDir).filter((file) => file.endsWith('.ipa'));
+
+  if (ipaFiles.length === 0) {
+    throw new CommandError(`No IPA file found in export directory: ${exportDir}`);
+  }
+
+  const ipaPath = path.join(exportDir, ipaFiles[0]);
+  Log.log(`✅ Signed IPA exported to: ${ipaPath}`);
+
+  // Extract the .app bundle from the IPA for device installation
+  const appPath = await extractAppFromIpaAsync(ipaPath, exportDir);
+  return appPath;
+}
+
+async function extractAppFromIpaAsync(ipaPath: string, extractDir: string): Promise<string> {
+  Log.log(`Extracting app from IPA: ${ipaPath}`);
+  const { spawn } = await import('child_process');
+
+  // Create extraction directory
+  const ipaExtractDir = path.join(extractDir, 'extracted');
+
+  // Check if already extracted (caching optimization)
+  const payloadDir = path.join(ipaExtractDir, 'Payload');
+  if (fs.existsSync(payloadDir)) {
+    const appFiles = fs.readdirSync(payloadDir).filter(file => file.endsWith('.app'));
+    if (appFiles.length > 0) {
+      const cachedAppPath = path.join(payloadDir, appFiles[0]);
+      Log.debug('Using cached extracted app:', cachedAppPath);
+      return cachedAppPath;
+    }
+  }
+    
+  ensureDirectory(ipaExtractDir);
+
+  // Extract IPA (which is a zip file) using unzip
+  return new Promise((resolve, reject) => {
+    const unzipProcess = spawn('unzip', ['-qq', '-o', ipaPath, '-d', ipaExtractDir]);
+
+    let stdout = '';
+    let stderr = '';
+
+    // Capture output for debugging
+    unzipProcess.stdout?.on('data', (data) => {
+      stdout += data.toString();
+      Log.debug('unzip stdout:', data.toString().trim());
+    });
+
+    unzipProcess.stderr?.on('data', (data) => {
+      stderr += data.toString();
+      Log.debug('unzip stderr:', data.toString().trim());
+    });
+
+    unzipProcess.on('close', (code) => {
+      Log.debug(`unzip process exited with code: ${code}`);
+
+      if (code !== 0) {
+        reject(
+          new CommandError(
+            `Failed to extract IPA file (exit code ${code}): ${ipaPath}\nstdout: ${stdout}\nstderr: ${stderr}`
+          )
+        );
+        return;
+      }
+
+      try {
+        // Find the .app bundle inside Payload directory
+        const payloadDir = path.join(ipaExtractDir, 'Payload');
+        Log.debug(`Looking for Payload directory at: ${payloadDir}`);
+
+        if (!fs.existsSync(payloadDir)) {
+          reject(
+            new CommandError(
+              `No Payload directory found in extracted IPA: ${ipaPath}\nExtracted to: ${ipaExtractDir}\nContents: ${fs.readdirSync(ipaExtractDir).join(', ')}`
+            )
+          );
+          return;
+        }
+
+        const payloadContents = fs.readdirSync(payloadDir);
+        Log.debug(`Payload directory contents: ${payloadContents.join(', ')}`);
+
+        const appFiles = payloadContents.filter((file) => file.endsWith('.app'));
+        if (appFiles.length === 0) {
+          reject(
+            new CommandError(
+              `No .app bundle found in IPA Payload directory: ${payloadDir}\nContents: ${payloadContents.join(', ')}`
+            )
+          );
+          return;
+        }
+
+        const appPath = path.join(payloadDir, appFiles[0]);
+        Log.log(`✅ Extracted .app bundle to: ${appPath}`);
+        resolve(appPath);
+      } catch (error) {
+        reject(new CommandError(`Error processing extracted IPA: ${error.message}`));
+      }
+    });
+
+    unzipProcess.on('error', (error) => {
+      reject(new CommandError(`Failed to start unzip process: ${error.message}`));
+    });
+  });
 }
 
 // Exposed for testing.

@@ -1,14 +1,10 @@
-import { getConfig } from '@expo/config';
 import spawnAsync from '@expo/spawn-async';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 
 import * as XcodeBuild from './XcodeBuild';
-import { Options } from './XcodeBuild.types';
-import { getLaunchInfoForBinaryAsync, launchAppAsync } from './launchApp';
-import { resolveOptionsAsync } from './options/resolveOptions';
-import { getValidBinaryPathAsync } from './validateExternalBinary';
+import type { Options } from './XcodeBuild.types';
 import { exportEagerAsync } from '../../export/embed/exportEager';
 import * as Log from '../../log';
 import { AppleAppIdResolver } from '../../start/platforms/ios/AppleAppIdResolver';
@@ -23,6 +19,9 @@ import { getSchemesForIosAsync } from '../../utils/scheme';
 import { ensureNativeProjectAsync } from '../ensureNativeProject';
 import { logProjectLogsLocation } from '../hints';
 import { startBundlerAsync } from '../startBundler';
+import { getLaunchInfoForBinaryAsync, launchAppAsync } from './launchApp';
+import { resolveOptionsAsync } from './options/resolveOptions';
+import { getValidBinaryPathAsync } from './validateExternalBinary';
 
 const debug = require('debug')('expo:run:ios');
 
@@ -34,15 +33,32 @@ export async function runIosAsync(projectRoot: string, options: Options) {
 
   const install = !!options.install;
 
-  if ((await ensureNativeProjectAsync(projectRoot, { platform: 'ios', install })) && install) {
+  if (
+    (await ensureNativeProjectAsync(projectRoot, {
+      platform: 'ios',
+      install,
+    })) &&
+    install
+  ) {
     await maybePromptToSyncPodsAsync(projectRoot);
   }
 
   // Resolve the CLI arguments into useable options.
   const props = await profile(resolveOptionsAsync)(projectRoot, options);
 
-  const projectConfig = getConfig(projectRoot);
-  if (!options.binary && props.buildCacheProvider && props.isSimulator) {
+  if (!options.binary && options.withArchive) {
+    // For device builds, we cache archives (.xcarchive)
+    const archivePath = path.join(
+      props.projectRoot,
+      '.expo',
+      'archives',
+      `${props.scheme}.xcarchive`
+    );
+
+    Log.log('Found cached archive, exporting signed IPA...');
+    const ipaPath = await XcodeBuild.exportArchiveAsync(archivePath, projectRoot);
+    options.binary = ipaPath;
+  } else if (!options.binary && props.buildCacheProvider && props.isSimulator) {
     const localPath = await resolveBuildCache({
       projectRoot,
       platform: 'ios',
@@ -105,6 +121,7 @@ export async function runIosAsync(projectRoot: string, options: Options) {
 
   let binaryPath: string;
   let shouldUpdateBuildCache = false;
+  let archivePath: string | undefined;
   if (options.binary) {
     binaryPath = await getValidBinaryPathAsync(options.binary, props);
     Log.log('Using custom binary path:', binaryPath);
@@ -120,15 +137,23 @@ export async function runIosAsync(projectRoot: string, options: Options) {
       );
     }
 
-    // Spawn the `xcodebuild` process to create the app binary.
-    const buildOutput = await XcodeBuild.buildAsync({
-      ...props,
-      eagerBundleOptions,
-    });
+    if (!props.isSimulator && props.buildCacheProvider && options.withArchive) {
+      // Step 1: Build and create archive
+      archivePath = await XcodeBuild.archiveAsync({
+        ...props,
+        eagerBundleOptions,
+      });
 
-    // Find the path to the built app binary, this will be used to install the binary
-    // on a device.
-    binaryPath = await profile(XcodeBuild.getAppBinaryPath)(buildOutput);
+      // Step 2: Export archive to signed IPA
+      binaryPath = await XcodeBuild.exportArchiveAsync(archivePath, projectRoot);
+    } else {
+      const buildOutput = await XcodeBuild.buildAsync({
+        ...props,
+        eagerBundleOptions,
+      });
+
+      binaryPath = profile(XcodeBuild.getAppBinaryPath)(buildOutput);
+    }
     shouldUpdateBuildCache = true;
   }
   debug('Binary path:', binaryPath);
@@ -185,13 +210,20 @@ export async function runIosAsync(projectRoot: string, options: Options) {
   }
 
   if (shouldUpdateBuildCache && props.buildCacheProvider) {
+    const cacheKey = !props.isSimulator && archivePath ? { unsigned: true } : {};
+
     await uploadBuildCache({
       projectRoot,
       platform: 'ios',
       provider: props.buildCacheProvider,
-      buildPath: binaryPath,
-      runOptions: options,
+      buildPath: archivePath || binaryPath,
+      runOptions: { ...options, ...cacheKey },
     });
+
+    // TODO: save the archive with a different fingerprint or smth
+    // if (archivePath) {
+    //   fs.rmSync(archivePath, { recursive: true, force: true });
+    // }
   }
 }
 

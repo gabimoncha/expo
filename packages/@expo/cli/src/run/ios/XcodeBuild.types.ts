@@ -23,6 +23,8 @@ export type Options = {
   /** Path to an existing binary to install on the device. */
   binary?: string;
 
+  withArchive?: boolean;
+
   /** Re-bundle JS and assets, then embed in existing app, and install again. */
   rebundle?: boolean;
 };
